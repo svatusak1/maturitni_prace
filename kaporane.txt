@@ -44,11 +44,12 @@ following types are available:
     int - 16 bits -> −32767, +32767
     string - space allocated according to the length - immutable
     list - needs to be initialized with specific size and type of all the 
-        elements 
+        elementsl; they are of fixed size -> adding an ellement creates a new
+        list
             list str[4] animals = ["bear", "cat", "frog", "elephant"]
             list byte[2] coordinates = [4, 8]
         list are indexed as follows:
-            print(animals[0])
+            str froggy = animals[2] 
 
 ==============================================================================
 OPERATORS
@@ -76,7 +77,7 @@ blocks are denoted with curly braces
 
 if (1 < counter):
 {
-    print("bear")
+    animals = animals + "bee"
 }
 
 
@@ -89,17 +90,17 @@ loop (variable to loop on; range; optional step)
 ## loops 5 times with i = 0, then 1, then 2, 3, 4
 loop (byte i; 0; 5): 
 {
-    print(i)
+    counter = counter + i
 }
 
 loop (int i; -2; 7):
 {
-    print(i)
+    counter = counter + i
 }
 
 loop (int i; 10; 0; --):
 {
-    print(i)
+    counter = counter + i
 }
 
 ==============================================================================
@@ -107,7 +108,7 @@ FUNCTIONS
 
 function calls are done with bracelets with arguments:
 
-print("ahoj")
+add(3, 5)
 
 foo(1, 4, "kozel")
 
@@ -120,7 +121,10 @@ func char foo(char a, str b, char c):
     return res
 }
 
-type casting is done with predefined functions:
+============================================================================== 
+TYPE CASTING 
+
+is done with predefined functions:
 
 int a = 10
 
