@@ -1,0 +1,135 @@
+*Kaporane* a simple programming language compiled with LVMM 
+
+Author: Jakub Svatuška
+
+==============================================================================
+Introduction
+
+Kaporane is a compiled procedural mostly structural language builded for 
+educational purposes.
+
+==============================================================================
+
+==============================================================================
+==============================================================================
+SYNTAX
+
+One-line comments are marked with ## at the beginning of the line:
+
+## this is a comment
+
+Multi-line comments are marked as follows ##[[ .... ]]##:
+
+##[[
+
+this 
+is 
+a multi-line 
+commment
+
+##]]
+
+==============================================================================
+VARIBLES
+
+type name = value
+
+int counter = 10
+
+they are by default signed
+
+following types are available:
+
+    byte - 8 bits -> −127, +127
+    int - 16 bits -> −32767, +32767
+    string - space allocated according to the length - immutable
+    list - needs to be initialized with specific size and type of all the 
+        elements 
+            list str[4] animals = ["bear", "cat", "frog", "elephant"]
+            list byte[2] coordinates = [4, 8]
+        list are indexed as follows:
+            print(animals[0])
+
+==============================================================================
+OPERATORS
+
+following arithmetic operators are available:
+    
+    + addition
+    - subtraction
+    * multiplication
+    : division
+
+comparing operators available:
+
+    < less then
+    > greater then
+    <= less then or equal
+    >= greater then or equal
+    == equals
+    != does not equal
+
+==============================================================================
+FLOW CONTROL
+
+blocks are denoted with curly braces
+
+if (1 < counter):
+{
+    print("bear")
+}
+
+
+loops are range like:
+
+loop (variable to loop on; range; optional step)
+
+## default step is +1
+
+## loops 5 times with i = 0, then 1, then 2, 3, 4
+loop (byte i; 0; 5): 
+{
+    print(i)
+}
+
+loop (int i; -2; 7):
+{
+    print(i)
+}
+
+loop (int i; 10; 0; --):
+{
+    print(i)
+}
+
+==============================================================================
+FUNCTIONS
+
+function calls are done with bracelets with arguments:
+
+print("ahoj")
+
+foo(1, 4, "kozel")
+
+function declarations are done with the func keyword 
+followed by its return type
+
+func char foo(char a, str b, char c):
+{
+    char res = a + c
+    return res
+}
+
+type casting is done with predefined functions:
+
+int a = 10
+
+char r = to_char(a)
+
+hidden type casting is not supported
+so following will through an error:
+
+int a = 5
+char r = a ## Error a is not char
+
+
