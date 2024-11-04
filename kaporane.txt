@@ -80,7 +80,9 @@ if (1 < counter):
 
 loops are range like:
 
-loop (variable to loop on; range; optional step)
+loop (variable_to_loop_on; range; optional_step):
+{
+}
 
 ## default step is +1
 
