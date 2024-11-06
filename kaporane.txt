@@ -1,11 +1,11 @@
-*Kaporane* a simple programming language compiled with LVMM 
+*Keporkak* a simple programming language compiled with LVMM 
 
 Author: Jakub Svatuška
 
 ==============================================================================
 Introduction
 
-Kaporane is a compiled procedural mostly structural language builded for 
+Keporkak is a compiled procedural mostly structural language builded for 
 educational purposes.
 
 ==============================================================================
@@ -74,7 +74,7 @@ FLOW CONTROL
 
 blocks are denoted with curly braces
 
-if (1 < counter):
+if (1 < counter)
 {
     animals = animals + "bee"
 }
@@ -87,17 +87,17 @@ loop (variable to loop on; range; optional step)
 ## default step is +1
 
 ## loops 5 times with i = 0, then 1, then 2, 3, 4
-loop (byte i; 0; 5): 
+loop (byte i; 0; 5) 
 {
     counter = counter + i
 }
 
-loop (int i; -2; 7):
+loop (int i; -2; 7)
 {
     counter = counter + i
 }
 
-loop (int i; 10; 0; --):
+loop (int i; 10; 0; --)
 {
     counter = counter + i
 }
@@ -114,7 +114,7 @@ foo(1, 4, "kozel")
 function declarations are done with the func keyword 
 followed by its return type
 
-func char foo(char a, str b, char c):
+func char foo(char a, str b, char c)
 {
     char res = a + c
     return res
