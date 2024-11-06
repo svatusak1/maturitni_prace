@@ -1,11 +1,12 @@
-*Keporkak* a simple programming language compiled with LVMM 
+*Rogalo* a simple programming language compiled with LVMM 
 
 Author: Jakub Svatuška
+Supervisor: Pavel Kryl
 
 ==============================================================================
 Introduction
 
-Keporkak is a compiled procedural mostly structural language builded for 
+Rogalo is a compiled procedural mostly structural language builded for 
 educational purposes.
 
 ==============================================================================
@@ -41,19 +42,23 @@ following types are available:
     int - 16 bits -> −32767, +32767
     string - space allocated according to the length - immutable
     list - needs to be initialized with specific size and type of all the 
-        elementsl; they are of fixed size -> adding an ellement creates a new
-        list
+        elementl; they are of fixed size -> adding an ellement via plus operator
+        creates a new list 
+        they are index from 0
+
             list str[4] animals = ["bear", "cat", "frog", "elephant"]
             list byte[2] coordinates = [4, 8]
+            list list[5] int[4] = []
         list are indexed as follows:
             str froggy = animals[2] 
+    0 is false and everythin else is evaluated as true
 
 ------------------------------------------------------------------------------
 OPERATORS
 
 following arithmetic operators are available:
     
-    + addition
+    + addition (also means addition for lists)
     - subtraction
     * multiplication
     : division
@@ -80,59 +85,48 @@ if (1 < counter)
 
 loops are range like:
 
-loop (variable_to_loop_on; range; optional_step)
+loop (variable_to_loop_on; range_min -> range_max(exclusiv); optional_step)
 {
 }
 
 ## default step is +1
 
 ## loops 5 times with i = 0, then 1, then 2, 3, 4
-loop (byte i; 0; 5) 
+loop (byte i; 0 -> 5) 
 {
     counter = counter + i
 }
 
-loop (int i; -2; 7)
+loop (int i; -2 -> 7)
 {
     counter = counter + i
 }
 
-loop (int i; 10; 0; --)
+loop (int i; 10 -> 0; -1)
 {
     counter = counter + i
 }
+
+
+list and strings return a syntax error in boolean statements evaluation
 
 ------------------------------------------------------------------------------
 FUNCTIONS
 
-function calls are done with bracelets with arguments:
+function calls are done with brackets with arguments:
 
 add(3, 5)
 
 foo(1, 4, "kozel")
 
 function declarations are done with the func keyword 
-followed by its return type
+followed by its return type, name and arguments
+
+return value is returned by return keyword
 
 func char foo(char a, str b, char c)
 {
     char res = a + c
     return res
 }
-
-------------------------------------------------------------------------------
-TYPE CASTING 
-
-is done with predefined functions:
-
-int a = 10
-
-char r = to_char(a)
-
-hidden type casting is not supported
-so following will through an error:
-
-int a = 5
-char r = a ## Error a is not char
-
 
