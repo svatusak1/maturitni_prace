@@ -9,8 +9,6 @@ Keporkak is a compiled procedural mostly structural language builded for
 educational purposes.
 
 ==============================================================================
-
-==============================================================================
 SYNTAX
 
 One-line comments are marked with ## at the beginning of the line:
@@ -28,7 +26,7 @@ commment
 
 ##]]
 
-==============================================================================
+------------------------------------------------------------------------------
 VARIBLES
 
 type name = value
@@ -50,7 +48,7 @@ following types are available:
         list are indexed as follows:
             str froggy = animals[2] 
 
-==============================================================================
+------------------------------------------------------------------------------
 OPERATORS
 
 following arithmetic operators are available:
@@ -69,7 +67,7 @@ comparing operators available:
     == equals
     != does not equal
 
-==============================================================================
+------------------------------------------------------------------------------
 FLOW CONTROL
 
 blocks are denoted with curly braces
@@ -82,7 +80,9 @@ if (1 < counter)
 
 loops are range like:
 
-loop (variable to loop on; range; optional step)
+loop (variable_to_loop_on; range; optional_step):
+{
+}
 
 ## default step is +1
 
@@ -102,7 +102,7 @@ loop (int i; 10; 0; --)
     counter = counter + i
 }
 
-==============================================================================
+------------------------------------------------------------------------------
 FUNCTIONS
 
 function calls are done with bracelets with arguments:
@@ -120,7 +120,7 @@ func char foo(char a, str b, char c)
     return res
 }
 
-============================================================================== 
+------------------------------------------------------------------------------
 TYPE CASTING 
 
 is done with predefined functions:
