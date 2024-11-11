@@ -1,4 +1,4 @@
-*Rogalo* a simple programming language compiled with LVMM 
+exit loops*Rogalo* a simple programming language compiled with LVMM 
 
 Author: Jakub Svatuška
 Supervisor: Pavel Kryl
@@ -6,7 +6,7 @@ Supervisor: Pavel Kryl
 ==============================================================================
 Introduction
 
-Rogalo is a compiled procedural mostly structural language builded for 
+Rogalo is a compiled procedural mostly structural language built for 
 educational purposes.
 
 ==============================================================================
@@ -48,10 +48,17 @@ following types are available:
 
             list str[4] animals = ["bear", "cat", "frog", "elephant"]
             list byte[2] coordinates = [4, 8]
-            list list[5] int[4] = []
+            list list[5] int[4] cars = []
         list are indexed as follows:
             str froggy = animals[2] 
-    0 is false and everythin else is evaluated as true
+        removal of elements from end with the -- operator:
+            animals --
+        remove element on index:
+            animals --[3]
+    0 is false and everything else is evaluated as true
+
+    capacity() is used to determine the length of a list
+    len() is used to get number of elements in list and the length of a string
 
 ------------------------------------------------------------------------------
 OPERATORS
