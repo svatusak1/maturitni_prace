@@ -231,10 +231,10 @@ void tree_free(struct node *node, FILE *fp) {
     printf(node->token);
     printf("\n");
     fflush(stdout);
-    if (node->left != NULL){
+    if (node->left){
         tree_free(node->left, fp);
     }
-    if (node->right != NULL){
+    if (node->right){
         tree_free(node->right, fp);
     }
 }
