@@ -1,0 +1,37 @@
+start-ROG
+func int add(int a, int b, list int seznam){
+    int res = a + b
+    return res
+}
+
+list[10] int vcelky = [1, 2, 5, 23, 4]
+call add(10, 20, vcelky)
+
+func int add(list int adolf, int dobrman, list list byte kaktus)
+{
+    int alk = dobrman + adolf
+    3+44
+    return call print("halo")
+    call simon_says(halo, halo)
+    byte kokos = call add(1, 2, 3)
+    list[10] str cokolady = ["jedna", "oriskova"]
+
+    loop (byte i; 0 -> 10; 1)
+    {
+        int ahoj = i
+    }
+    loop (byte i; 0 -> 10)
+    {
+        int ahoj = i
+    }
+
+    if ( 1 > 10){
+        call rozklovej()
+        ahoj = doh + 9 * totalita
+        seznam ++ "domovina"
+    }
+
+
+    return adolf
+}
+

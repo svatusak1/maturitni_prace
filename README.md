@@ -1,4 +1,5 @@
-exit loops*Rogalo* a simple programming language compiled with LVMM 
+*Rogalo* a simple programming language tokenize with flex, parsed with bison 
+and compiled with LVMM
 
 Author: Jakub Svatuška
 Supervisor: Pavel Kryl
@@ -41,20 +42,17 @@ following types are available:
     byte - 8 bits -> −127, +127
     int - 16 bits -> −32767, +32767
     string - space allocated according to the length - immutable
+        str car = "audi"
     list - needs to be initialized with specific size and type of all the 
-        elementl; they are of fixed size -> adding an ellement via plus operator
-        creates a new list 
+        elements; they are of fixed size -> adding an ellement via plus operator
+        creates a new list if size is overfilled
         they are index from 0
 
-            list str[4] animals = ["bear", "cat", "frog", "elephant"]
-            list byte[2] coordinates = [4, 8]
-            list list[5] int[4] cars = []
+            list[4] str animals = ["bear", "cat", "frog", "elephant"]
+            list[2] byte coordinates = [4, 8]
+            list[5] list[4] int cars = []
         list are indexed as follows:
             str froggy = animals[2] 
-        removal of elements from end with the -- operator:
-            animals --
-        remove element on index:
-            animals --[3]
     0 is false and everything else is evaluated as true
 
     capacity() is used to determine the length of a list
@@ -65,10 +63,10 @@ OPERATORS
 
 following arithmetic operators are available:
     
-    + addition (also means addition for lists)
+    + addition
     - subtraction
     * multiplication
-    : division
+    / division
 
 comparing operators available:
 
@@ -79,6 +77,18 @@ comparing operators available:
     == equals
     != does not equal
 
+list operators:
+    -- list subtraction
+        animals --
+        ## removes element at the end of the list
+        animals --[3]
+        ## removes element on index 3
+    ++ list addition
+        animals ++ "ahoj"
+        ## adds "ahoj" to the end of the list
+        animals ++[2] "kosa"
+        ## inserts "kosa" on the index 2 and moves the rest to the right
+
 ------------------------------------------------------------------------------
 FLOW CONTROL
 
@@ -86,7 +96,7 @@ blocks are denoted with curly braces
 
 if (1 < counter)
 {
-    animals = animals + "bee"
+    animals ++ "bee"
 }
 
 
@@ -94,6 +104,7 @@ loops are range like:
 
 loop (variable_to_loop_on; range_min -> range_max(exclusiv); optional_step)
 {
+    ## here happenes something
 }
 
 ## default step is +1
@@ -101,17 +112,17 @@ loop (variable_to_loop_on; range_min -> range_max(exclusiv); optional_step)
 ## loops 5 times with i = 0, then 1, then 2, 3, 4
 loop (byte i; 0 -> 5) 
 {
-    counter = counter + i
+    counter = counter + i * 10
 }
 
 loop (int i; -2 -> 7)
 {
-    counter = counter + i
+    counter = counter + i * i
 }
 
 loop (int i; 10 -> 0; -1)
 {
-    counter = counter + i
+    counter = counter + i / 5
 }
 
 
@@ -131,9 +142,8 @@ followed by its return type, name and arguments
 
 return value is returned by return keyword
 
-func char foo(char a, str b, char c)
+func byte addition(byte a, byte b)
 {
-    char res = a + c
-    return res
+    return a + b
 }
 

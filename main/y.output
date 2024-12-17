@@ -1,0 +1,1904 @@
+Grammar
+
+    0 $accept: st $end
+
+    1 st: START_OF_FILE program
+
+    2 program: statement program
+    3        | statement
+
+    4 statement: declarations
+    5          | expression
+    6          | flow_control
+    7          | change_val
+    8          | comment
+
+    9 declarations: func_dec
+   10             | variable_dec
+   11             | list_dec
+
+   12 comment: COMMENT
+   13        | MULTICOMMENT
+
+   14 change_val: IDENT ASSIGN expression
+   15           | list_change
+
+   16 list_change: IDENT ADDLIST expression
+   17            | IDENT REMLIST expression
+
+   18 func_dec: DEF arg_func_type IDENT LPAREN func_inp RPAREN LCURL function_block RCURL
+
+   19 func_inp: arg_func
+   20         | arg_func COMMA func_inp
+   21         | %empty
+
+   22 arg_func: arg_func_type IDENT
+
+   23 arg_func_type: BYTE
+   24              | INT
+   25              | STRTYPE
+   26              | arg_func_list_type
+   27              | VOIDTYPE
+
+   28 arg_func_list_type: LISTTYPE arg_func_type
+
+   29 function_block: function_line
+   30               | function_block function_line
+
+   31 function_line: statement
+   32              | return
+
+   33 return: RTRN expression
+
+   34 expression: expression PLUS expression
+   35           | expression MINUS expression
+   36           | expression TIMES expression
+   37           | expression DIVIDE expression
+   38           | LPAREN expression RPAREN
+   39           | IDENT
+   40           | NUMBER
+   41           | STR
+   42           | function_call
+   43           | list_indentation
+
+   44 function_call: CALL IDENT LPAREN arg_val RPAREN
+   45              | CALL CAPACITY LPAREN arg_val RPAREN
+   46              | CALL LEN LPAREN arg_val RPAREN
+
+   47 arg_val: expression
+   48        | arg_val COMMA expression
+   49        | %empty
+
+   50 variable_dec: datatype IDENT ASSIGN expression
+
+   51 datatype: BYTE
+   52         | INT
+   53         | STRTYPE
+   54         | list_type
+
+   55 list_type: LISTTYPE LBRACK expression LBRACK datatype
+
+   56 list_dec: LISTTYPE LBRACK expression RBRACK datatype IDENT ASSIGN LBRACK elem_list RBRACK
+
+   57 elem_list: expression
+   58          | elem_list COMMA expression
+
+   59 flow_control: LOOP LPAREN datatype IDENT SEMICOL range RPAREN block
+   60             | IF LPAREN condition RPAREN block
+
+   61 range: expression TO expression
+   62      | expression TO expression SEMICOL step
+
+   63 step: expression
+
+   64 condition: expression comp expression
+
+   65 comp: EQL
+   66     | NEQ
+   67     | LSS
+   68     | GTR
+   69     | LEQ
+   70     | GEQ
+
+   71 block: LCURL program RCURL
+
+   72 list_indentation: IDENT LBRACK expression RBRACK
+
+
+Terminals, with rules where they appear
+
+    $end (0) 0
+    error (256)
+    START_OF_FILE (258) 1
+    REMLIST <node_type> (259) 17
+    ADDLIST <node_type> (260) 16
+    PLUS <node_type> (261) 34
+    MINUS <node_type> (262) 35
+    TIMES <node_type> (263) 36
+    DIVIDE <node_type> (264) 37
+    RCURL <node_type> (265) 18 71
+    SEMICOL <node_type> (266) 59 62
+    COMMA <node_type> (267) 20 48 58
+    EQL <node_type> (268) 65
+    NEQ <node_type> (269) 66
+    LSS <node_type> (270) 67
+    GTR <node_type> (271) 68
+    LEQ <node_type> (272) 69
+    GEQ <node_type> (273) 70
+    CALL <node_type> (274) 44 45 46
+    DEF <node_type> (275) 18
+    RTRN <node_type> (276) 33
+    LOOP <node_type> (277) 59
+    TO <node_type> (278) 61 62
+    IF <node_type> (279) 60
+    BYTE <node_type> (280) 23 51
+    INT <node_type> (281) 24 52
+    STRTYPE <node_type> (282) 25 53
+    LPAREN <node_type> (283) 18 38 44 45 46 59 60
+    RPAREN <node_type> (284) 18 38 44 45 46 59 60
+    LBRACK <node_type> (285) 55 56 72
+    RBRACK <node_type> (286) 56 72
+    LCURL <node_type> (287) 18 71
+    LISTTYPE <node_type> (288) 28 55 56
+    VOIDTYPE <node_type> (289) 27
+    ASSIGN <node_type> (290) 14 50 56
+    CAPACITY <node_type> (291) 45
+    LEN <node_type> (292) 46
+    COMMENT <node_type> (293) 12
+    MULTICOMMENT <node_type> (294) 13
+    IDENT <node_type> (295) 14 16 17 18 22 39 44 50 56 59 72
+    NUMBER <node_type> (296) 40
+    STR <node_type> (297) 41
+
+
+Nonterminals, with rules where they appear
+
+    $accept (43)
+        on left: 0
+    st <node_obj> (44)
+        on left: 1
+        on right: 0
+    program <node_obj> (45)
+        on left: 2 3
+        on right: 1 2 71
+    statement <node_obj> (46)
+        on left: 4 5 6 7 8
+        on right: 2 3 31
+    declarations (47)
+        on left: 9 10 11
+        on right: 4
+    comment (48)
+        on left: 12 13
+        on right: 8
+    change_val (49)
+        on left: 14 15
+        on right: 7
+    list_change (50)
+        on left: 16 17
+        on right: 15
+    func_dec <node_obj> (51)
+        on left: 18
+        on right: 9
+    func_inp <node_obj> (52)
+        on left: 19 20 21
+        on right: 18 20
+    arg_func <node_obj> (53)
+        on left: 22
+        on right: 19 20
+    arg_func_type <node_obj> (54)
+        on left: 23 24 25 26 27
+        on right: 18 22 28
+    arg_func_list_type <node_obj> (55)
+        on left: 28
+        on right: 26
+    function_block <node_obj> (56)
+        on left: 29 30
+        on right: 18 30
+    function_line (57)
+        on left: 31 32
+        on right: 29 30
+    return <node_obj> (58)
+        on left: 33
+        on right: 32
+    expression <node_obj> (59)
+        on left: 34 35 36 37 38 39 40 41 42 43
+        on right: 5 14 16 17 33 34 35 36 37 38 47 48 50 55 56 57 58 61 62 63 64 72
+    function_call (60)
+        on left: 44 45 46
+        on right: 42
+    arg_val (61)
+        on left: 47 48 49
+        on right: 44 45 46 48
+    variable_dec (62)
+        on left: 50
+        on right: 10
+    datatype (63)
+        on left: 51 52 53 54
+        on right: 50 55 56 59
+    list_type (64)
+        on left: 55
+        on right: 54
+    list_dec (65)
+        on left: 56
+        on right: 11
+    elem_list (66)
+        on left: 57 58
+        on right: 56 58
+    flow_control (67)
+        on left: 59 60
+        on right: 6
+    range (68)
+        on left: 61 62
+        on right: 59
+    step (69)
+        on left: 63
+        on right: 62
+    condition (70)
+        on left: 64
+        on right: 60
+    comp (71)
+        on left: 65 66 67 68 69 70
+        on right: 64
+    block (72)
+        on left: 71
+        on right: 59 60
+    list_indentation (73)
+        on left: 72
+        on right: 43
+
+
+State 0
+
+    0 $accept: . st $end
+
+    START_OF_FILE  shift, and go to state 1
+
+    st  go to state 2
+
+
+State 1
+
+    1 st: START_OF_FILE . program
+
+    CALL          shift, and go to state 3
+    DEF           shift, and go to state 4
+    LOOP          shift, and go to state 5
+    IF            shift, and go to state 6
+    BYTE          shift, and go to state 7
+    INT           shift, and go to state 8
+    STRTYPE       shift, and go to state 9
+    LPAREN        shift, and go to state 10
+    LISTTYPE      shift, and go to state 11
+    COMMENT       shift, and go to state 12
+    MULTICOMMENT  shift, and go to state 13
+    IDENT         shift, and go to state 14
+    NUMBER        shift, and go to state 15
+    STR           shift, and go to state 16
+
+    program           go to state 17
+    statement         go to state 18
+    declarations      go to state 19
+    comment           go to state 20
+    change_val        go to state 21
+    list_change       go to state 22
+    func_dec          go to state 23
+    expression        go to state 24
+    function_call     go to state 25
+    variable_dec      go to state 26
+    datatype          go to state 27
+    list_type         go to state 28
+    list_dec          go to state 29
+    flow_control      go to state 30
+    list_indentation  go to state 31
+
+
+State 2
+
+    0 $accept: st . $end
+
+    $end  shift, and go to state 32
+
+
+State 3
+
+   44 function_call: CALL . IDENT LPAREN arg_val RPAREN
+   45              | CALL . CAPACITY LPAREN arg_val RPAREN
+   46              | CALL . LEN LPAREN arg_val RPAREN
+
+    CAPACITY  shift, and go to state 33
+    LEN       shift, and go to state 34
+    IDENT     shift, and go to state 35
+
+
+State 4
+
+   18 func_dec: DEF . arg_func_type IDENT LPAREN func_inp RPAREN LCURL function_block RCURL
+
+    BYTE      shift, and go to state 36
+    INT       shift, and go to state 37
+    STRTYPE   shift, and go to state 38
+    LISTTYPE  shift, and go to state 39
+    VOIDTYPE  shift, and go to state 40
+
+    arg_func_type       go to state 41
+    arg_func_list_type  go to state 42
+
+
+State 5
+
+   59 flow_control: LOOP . LPAREN datatype IDENT SEMICOL range RPAREN block
+
+    LPAREN  shift, and go to state 43
+
+
+State 6
+
+   60 flow_control: IF . LPAREN condition RPAREN block
+
+    LPAREN  shift, and go to state 44
+
+
+State 7
+
+   51 datatype: BYTE .
+
+    $default  reduce using rule 51 (datatype)
+
+
+State 8
+
+   52 datatype: INT .
+
+    $default  reduce using rule 52 (datatype)
+
+
+State 9
+
+   53 datatype: STRTYPE .
+
+    $default  reduce using rule 53 (datatype)
+
+
+State 10
+
+   38 expression: LPAREN . expression RPAREN
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 46
+    function_call     go to state 25
+    list_indentation  go to state 31
+
+
+State 11
+
+   55 list_type: LISTTYPE . LBRACK expression LBRACK datatype
+   56 list_dec: LISTTYPE . LBRACK expression RBRACK datatype IDENT ASSIGN LBRACK elem_list RBRACK
+
+    LBRACK  shift, and go to state 47
+
+
+State 12
+
+   12 comment: COMMENT .
+
+    $default  reduce using rule 12 (comment)
+
+
+State 13
+
+   13 comment: MULTICOMMENT .
+
+    $default  reduce using rule 13 (comment)
+
+
+State 14
+
+   14 change_val: IDENT . ASSIGN expression
+   16 list_change: IDENT . ADDLIST expression
+   17            | IDENT . REMLIST expression
+   39 expression: IDENT .
+   72 list_indentation: IDENT . LBRACK expression RBRACK
+
+    REMLIST  shift, and go to state 48
+    ADDLIST  shift, and go to state 49
+    LBRACK   shift, and go to state 50
+    ASSIGN   shift, and go to state 51
+
+    $default  reduce using rule 39 (expression)
+
+
+State 15
+
+   40 expression: NUMBER .
+
+    $default  reduce using rule 40 (expression)
+
+
+State 16
+
+   41 expression: STR .
+
+    $default  reduce using rule 41 (expression)
+
+
+State 17
+
+    1 st: START_OF_FILE program .
+
+    $default  reduce using rule 1 (st)
+
+
+State 18
+
+    2 program: statement . program
+    3        | statement .
+
+    CALL          shift, and go to state 3
+    DEF           shift, and go to state 4
+    LOOP          shift, and go to state 5
+    IF            shift, and go to state 6
+    BYTE          shift, and go to state 7
+    INT           shift, and go to state 8
+    STRTYPE       shift, and go to state 9
+    LPAREN        shift, and go to state 10
+    LISTTYPE      shift, and go to state 11
+    COMMENT       shift, and go to state 12
+    MULTICOMMENT  shift, and go to state 13
+    IDENT         shift, and go to state 14
+    NUMBER        shift, and go to state 15
+    STR           shift, and go to state 16
+
+    $default  reduce using rule 3 (program)
+
+    program           go to state 52
+    statement         go to state 18
+    declarations      go to state 19
+    comment           go to state 20
+    change_val        go to state 21
+    list_change       go to state 22
+    func_dec          go to state 23
+    expression        go to state 24
+    function_call     go to state 25
+    variable_dec      go to state 26
+    datatype          go to state 27
+    list_type         go to state 28
+    list_dec          go to state 29
+    flow_control      go to state 30
+    list_indentation  go to state 31
+
+
+State 19
+
+    4 statement: declarations .
+
+    $default  reduce using rule 4 (statement)
+
+
+State 20
+
+    8 statement: comment .
+
+    $default  reduce using rule 8 (statement)
+
+
+State 21
+
+    7 statement: change_val .
+
+    $default  reduce using rule 7 (statement)
+
+
+State 22
+
+   15 change_val: list_change .
+
+    $default  reduce using rule 15 (change_val)
+
+
+State 23
+
+    9 declarations: func_dec .
+
+    $default  reduce using rule 9 (declarations)
+
+
+State 24
+
+    5 statement: expression .
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+
+    PLUS    shift, and go to state 53
+    MINUS   shift, and go to state 54
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+
+    $default  reduce using rule 5 (statement)
+
+
+State 25
+
+   42 expression: function_call .
+
+    $default  reduce using rule 42 (expression)
+
+
+State 26
+
+   10 declarations: variable_dec .
+
+    $default  reduce using rule 10 (declarations)
+
+
+State 27
+
+   50 variable_dec: datatype . IDENT ASSIGN expression
+
+    IDENT  shift, and go to state 57
+
+
+State 28
+
+   54 datatype: list_type .
+
+    $default  reduce using rule 54 (datatype)
+
+
+State 29
+
+   11 declarations: list_dec .
+
+    $default  reduce using rule 11 (declarations)
+
+
+State 30
+
+    6 statement: flow_control .
+
+    $default  reduce using rule 6 (statement)
+
+
+State 31
+
+   43 expression: list_indentation .
+
+    $default  reduce using rule 43 (expression)
+
+
+State 32
+
+    0 $accept: st $end .
+
+    $default  accept
+
+
+State 33
+
+   45 function_call: CALL CAPACITY . LPAREN arg_val RPAREN
+
+    LPAREN  shift, and go to state 58
+
+
+State 34
+
+   46 function_call: CALL LEN . LPAREN arg_val RPAREN
+
+    LPAREN  shift, and go to state 59
+
+
+State 35
+
+   44 function_call: CALL IDENT . LPAREN arg_val RPAREN
+
+    LPAREN  shift, and go to state 60
+
+
+State 36
+
+   23 arg_func_type: BYTE .
+
+    $default  reduce using rule 23 (arg_func_type)
+
+
+State 37
+
+   24 arg_func_type: INT .
+
+    $default  reduce using rule 24 (arg_func_type)
+
+
+State 38
+
+   25 arg_func_type: STRTYPE .
+
+    $default  reduce using rule 25 (arg_func_type)
+
+
+State 39
+
+   28 arg_func_list_type: LISTTYPE . arg_func_type
+
+    BYTE      shift, and go to state 36
+    INT       shift, and go to state 37
+    STRTYPE   shift, and go to state 38
+    LISTTYPE  shift, and go to state 39
+    VOIDTYPE  shift, and go to state 40
+
+    arg_func_type       go to state 61
+    arg_func_list_type  go to state 42
+
+
+State 40
+
+   27 arg_func_type: VOIDTYPE .
+
+    $default  reduce using rule 27 (arg_func_type)
+
+
+State 41
+
+   18 func_dec: DEF arg_func_type . IDENT LPAREN func_inp RPAREN LCURL function_block RCURL
+
+    IDENT  shift, and go to state 62
+
+
+State 42
+
+   26 arg_func_type: arg_func_list_type .
+
+    $default  reduce using rule 26 (arg_func_type)
+
+
+State 43
+
+   59 flow_control: LOOP LPAREN . datatype IDENT SEMICOL range RPAREN block
+
+    BYTE      shift, and go to state 7
+    INT       shift, and go to state 8
+    STRTYPE   shift, and go to state 9
+    LISTTYPE  shift, and go to state 63
+
+    datatype   go to state 64
+    list_type  go to state 28
+
+
+State 44
+
+   60 flow_control: IF LPAREN . condition RPAREN block
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 65
+    function_call     go to state 25
+    condition         go to state 66
+    list_indentation  go to state 31
+
+
+State 45
+
+   39 expression: IDENT .
+   72 list_indentation: IDENT . LBRACK expression RBRACK
+
+    LBRACK  shift, and go to state 50
+
+    $default  reduce using rule 39 (expression)
+
+
+State 46
+
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+   38           | LPAREN expression . RPAREN
+
+    PLUS    shift, and go to state 53
+    MINUS   shift, and go to state 54
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+    RPAREN  shift, and go to state 67
+
+
+State 47
+
+   55 list_type: LISTTYPE LBRACK . expression LBRACK datatype
+   56 list_dec: LISTTYPE LBRACK . expression RBRACK datatype IDENT ASSIGN LBRACK elem_list RBRACK
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 68
+    function_call     go to state 25
+    list_indentation  go to state 31
+
+
+State 48
+
+   17 list_change: IDENT REMLIST . expression
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 69
+    function_call     go to state 25
+    list_indentation  go to state 31
+
+
+State 49
+
+   16 list_change: IDENT ADDLIST . expression
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 70
+    function_call     go to state 25
+    list_indentation  go to state 31
+
+
+State 50
+
+   72 list_indentation: IDENT LBRACK . expression RBRACK
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 71
+    function_call     go to state 25
+    list_indentation  go to state 31
+
+
+State 51
+
+   14 change_val: IDENT ASSIGN . expression
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 72
+    function_call     go to state 25
+    list_indentation  go to state 31
+
+
+State 52
+
+    2 program: statement program .
+
+    $default  reduce using rule 2 (program)
+
+
+State 53
+
+   34 expression: expression PLUS . expression
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 73
+    function_call     go to state 25
+    list_indentation  go to state 31
+
+
+State 54
+
+   35 expression: expression MINUS . expression
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 74
+    function_call     go to state 25
+    list_indentation  go to state 31
+
+
+State 55
+
+   36 expression: expression TIMES . expression
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 75
+    function_call     go to state 25
+    list_indentation  go to state 31
+
+
+State 56
+
+   37 expression: expression DIVIDE . expression
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 76
+    function_call     go to state 25
+    list_indentation  go to state 31
+
+
+State 57
+
+   50 variable_dec: datatype IDENT . ASSIGN expression
+
+    ASSIGN  shift, and go to state 77
+
+
+State 58
+
+   45 function_call: CALL CAPACITY LPAREN . arg_val RPAREN
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    $default  reduce using rule 49 (arg_val)
+
+    expression        go to state 78
+    function_call     go to state 25
+    arg_val           go to state 79
+    list_indentation  go to state 31
+
+
+State 59
+
+   46 function_call: CALL LEN LPAREN . arg_val RPAREN
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    $default  reduce using rule 49 (arg_val)
+
+    expression        go to state 78
+    function_call     go to state 25
+    arg_val           go to state 80
+    list_indentation  go to state 31
+
+
+State 60
+
+   44 function_call: CALL IDENT LPAREN . arg_val RPAREN
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    $default  reduce using rule 49 (arg_val)
+
+    expression        go to state 78
+    function_call     go to state 25
+    arg_val           go to state 81
+    list_indentation  go to state 31
+
+
+State 61
+
+   28 arg_func_list_type: LISTTYPE arg_func_type .
+
+    $default  reduce using rule 28 (arg_func_list_type)
+
+
+State 62
+
+   18 func_dec: DEF arg_func_type IDENT . LPAREN func_inp RPAREN LCURL function_block RCURL
+
+    LPAREN  shift, and go to state 82
+
+
+State 63
+
+   55 list_type: LISTTYPE . LBRACK expression LBRACK datatype
+
+    LBRACK  shift, and go to state 83
+
+
+State 64
+
+   59 flow_control: LOOP LPAREN datatype . IDENT SEMICOL range RPAREN block
+
+    IDENT  shift, and go to state 84
+
+
+State 65
+
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+   64 condition: expression . comp expression
+
+    PLUS    shift, and go to state 53
+    MINUS   shift, and go to state 54
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+    EQL     shift, and go to state 85
+    NEQ     shift, and go to state 86
+    LSS     shift, and go to state 87
+    GTR     shift, and go to state 88
+    LEQ     shift, and go to state 89
+    GEQ     shift, and go to state 90
+
+    comp  go to state 91
+
+
+State 66
+
+   60 flow_control: IF LPAREN condition . RPAREN block
+
+    RPAREN  shift, and go to state 92
+
+
+State 67
+
+   38 expression: LPAREN expression RPAREN .
+
+    $default  reduce using rule 38 (expression)
+
+
+State 68
+
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+   55 list_type: LISTTYPE LBRACK expression . LBRACK datatype
+   56 list_dec: LISTTYPE LBRACK expression . RBRACK datatype IDENT ASSIGN LBRACK elem_list RBRACK
+
+    PLUS    shift, and go to state 53
+    MINUS   shift, and go to state 54
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+    LBRACK  shift, and go to state 93
+    RBRACK  shift, and go to state 94
+
+
+State 69
+
+   17 list_change: IDENT REMLIST expression .
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+
+    PLUS    shift, and go to state 53
+    MINUS   shift, and go to state 54
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+
+    $default  reduce using rule 17 (list_change)
+
+
+State 70
+
+   16 list_change: IDENT ADDLIST expression .
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+
+    PLUS    shift, and go to state 53
+    MINUS   shift, and go to state 54
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+
+    $default  reduce using rule 16 (list_change)
+
+
+State 71
+
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+   72 list_indentation: IDENT LBRACK expression . RBRACK
+
+    PLUS    shift, and go to state 53
+    MINUS   shift, and go to state 54
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+    RBRACK  shift, and go to state 95
+
+
+State 72
+
+   14 change_val: IDENT ASSIGN expression .
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+
+    PLUS    shift, and go to state 53
+    MINUS   shift, and go to state 54
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+
+    $default  reduce using rule 14 (change_val)
+
+
+State 73
+
+   34 expression: expression . PLUS expression
+   34           | expression PLUS expression .
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+
+    $default  reduce using rule 34 (expression)
+
+
+State 74
+
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   35           | expression MINUS expression .
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+
+    $default  reduce using rule 35 (expression)
+
+
+State 75
+
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   36           | expression TIMES expression .
+   37           | expression . DIVIDE expression
+
+    $default  reduce using rule 36 (expression)
+
+
+State 76
+
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+   37           | expression DIVIDE expression .
+
+    $default  reduce using rule 37 (expression)
+
+
+State 77
+
+   50 variable_dec: datatype IDENT ASSIGN . expression
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 96
+    function_call     go to state 25
+    list_indentation  go to state 31
+
+
+State 78
+
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+   47 arg_val: expression .
+
+    PLUS    shift, and go to state 53
+    MINUS   shift, and go to state 54
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+
+    $default  reduce using rule 47 (arg_val)
+
+
+State 79
+
+   45 function_call: CALL CAPACITY LPAREN arg_val . RPAREN
+   48 arg_val: arg_val . COMMA expression
+
+    COMMA   shift, and go to state 97
+    RPAREN  shift, and go to state 98
+
+
+State 80
+
+   46 function_call: CALL LEN LPAREN arg_val . RPAREN
+   48 arg_val: arg_val . COMMA expression
+
+    COMMA   shift, and go to state 97
+    RPAREN  shift, and go to state 99
+
+
+State 81
+
+   44 function_call: CALL IDENT LPAREN arg_val . RPAREN
+   48 arg_val: arg_val . COMMA expression
+
+    COMMA   shift, and go to state 97
+    RPAREN  shift, and go to state 100
+
+
+State 82
+
+   18 func_dec: DEF arg_func_type IDENT LPAREN . func_inp RPAREN LCURL function_block RCURL
+
+    BYTE      shift, and go to state 36
+    INT       shift, and go to state 37
+    STRTYPE   shift, and go to state 38
+    LISTTYPE  shift, and go to state 39
+    VOIDTYPE  shift, and go to state 40
+
+    $default  reduce using rule 21 (func_inp)
+
+    func_inp            go to state 101
+    arg_func            go to state 102
+    arg_func_type       go to state 103
+    arg_func_list_type  go to state 42
+
+
+State 83
+
+   55 list_type: LISTTYPE LBRACK . expression LBRACK datatype
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 104
+    function_call     go to state 25
+    list_indentation  go to state 31
+
+
+State 84
+
+   59 flow_control: LOOP LPAREN datatype IDENT . SEMICOL range RPAREN block
+
+    SEMICOL  shift, and go to state 105
+
+
+State 85
+
+   65 comp: EQL .
+
+    $default  reduce using rule 65 (comp)
+
+
+State 86
+
+   66 comp: NEQ .
+
+    $default  reduce using rule 66 (comp)
+
+
+State 87
+
+   67 comp: LSS .
+
+    $default  reduce using rule 67 (comp)
+
+
+State 88
+
+   68 comp: GTR .
+
+    $default  reduce using rule 68 (comp)
+
+
+State 89
+
+   69 comp: LEQ .
+
+    $default  reduce using rule 69 (comp)
+
+
+State 90
+
+   70 comp: GEQ .
+
+    $default  reduce using rule 70 (comp)
+
+
+State 91
+
+   64 condition: expression comp . expression
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 106
+    function_call     go to state 25
+    list_indentation  go to state 31
+
+
+State 92
+
+   60 flow_control: IF LPAREN condition RPAREN . block
+
+    LCURL  shift, and go to state 107
+
+    block  go to state 108
+
+
+State 93
+
+   55 list_type: LISTTYPE LBRACK expression LBRACK . datatype
+
+    BYTE      shift, and go to state 7
+    INT       shift, and go to state 8
+    STRTYPE   shift, and go to state 9
+    LISTTYPE  shift, and go to state 63
+
+    datatype   go to state 109
+    list_type  go to state 28
+
+
+State 94
+
+   56 list_dec: LISTTYPE LBRACK expression RBRACK . datatype IDENT ASSIGN LBRACK elem_list RBRACK
+
+    BYTE      shift, and go to state 7
+    INT       shift, and go to state 8
+    STRTYPE   shift, and go to state 9
+    LISTTYPE  shift, and go to state 63
+
+    datatype   go to state 110
+    list_type  go to state 28
+
+
+State 95
+
+   72 list_indentation: IDENT LBRACK expression RBRACK .
+
+    $default  reduce using rule 72 (list_indentation)
+
+
+State 96
+
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+   50 variable_dec: datatype IDENT ASSIGN expression .
+
+    PLUS    shift, and go to state 53
+    MINUS   shift, and go to state 54
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+
+    $default  reduce using rule 50 (variable_dec)
+
+
+State 97
+
+   48 arg_val: arg_val COMMA . expression
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 111
+    function_call     go to state 25
+    list_indentation  go to state 31
+
+
+State 98
+
+   45 function_call: CALL CAPACITY LPAREN arg_val RPAREN .
+
+    $default  reduce using rule 45 (function_call)
+
+
+State 99
+
+   46 function_call: CALL LEN LPAREN arg_val RPAREN .
+
+    $default  reduce using rule 46 (function_call)
+
+
+State 100
+
+   44 function_call: CALL IDENT LPAREN arg_val RPAREN .
+
+    $default  reduce using rule 44 (function_call)
+
+
+State 101
+
+   18 func_dec: DEF arg_func_type IDENT LPAREN func_inp . RPAREN LCURL function_block RCURL
+
+    RPAREN  shift, and go to state 112
+
+
+State 102
+
+   19 func_inp: arg_func .
+   20         | arg_func . COMMA func_inp
+
+    COMMA  shift, and go to state 113
+
+    $default  reduce using rule 19 (func_inp)
+
+
+State 103
+
+   22 arg_func: arg_func_type . IDENT
+
+    IDENT  shift, and go to state 114
+
+
+State 104
+
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+   55 list_type: LISTTYPE LBRACK expression . LBRACK datatype
+
+    PLUS    shift, and go to state 53
+    MINUS   shift, and go to state 54
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+    LBRACK  shift, and go to state 93
+
+
+State 105
+
+   59 flow_control: LOOP LPAREN datatype IDENT SEMICOL . range RPAREN block
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 115
+    function_call     go to state 25
+    range             go to state 116
+    list_indentation  go to state 31
+
+
+State 106
+
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+   64 condition: expression comp expression .
+
+    PLUS    shift, and go to state 53
+    MINUS   shift, and go to state 54
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+
+    $default  reduce using rule 64 (condition)
+
+
+State 107
+
+   71 block: LCURL . program RCURL
+
+    CALL          shift, and go to state 3
+    DEF           shift, and go to state 4
+    LOOP          shift, and go to state 5
+    IF            shift, and go to state 6
+    BYTE          shift, and go to state 7
+    INT           shift, and go to state 8
+    STRTYPE       shift, and go to state 9
+    LPAREN        shift, and go to state 10
+    LISTTYPE      shift, and go to state 11
+    COMMENT       shift, and go to state 12
+    MULTICOMMENT  shift, and go to state 13
+    IDENT         shift, and go to state 14
+    NUMBER        shift, and go to state 15
+    STR           shift, and go to state 16
+
+    program           go to state 117
+    statement         go to state 18
+    declarations      go to state 19
+    comment           go to state 20
+    change_val        go to state 21
+    list_change       go to state 22
+    func_dec          go to state 23
+    expression        go to state 24
+    function_call     go to state 25
+    variable_dec      go to state 26
+    datatype          go to state 27
+    list_type         go to state 28
+    list_dec          go to state 29
+    flow_control      go to state 30
+    list_indentation  go to state 31
+
+
+State 108
+
+   60 flow_control: IF LPAREN condition RPAREN block .
+
+    $default  reduce using rule 60 (flow_control)
+
+
+State 109
+
+   55 list_type: LISTTYPE LBRACK expression LBRACK datatype .
+
+    $default  reduce using rule 55 (list_type)
+
+
+State 110
+
+   56 list_dec: LISTTYPE LBRACK expression RBRACK datatype . IDENT ASSIGN LBRACK elem_list RBRACK
+
+    IDENT  shift, and go to state 118
+
+
+State 111
+
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+   48 arg_val: arg_val COMMA expression .
+
+    PLUS    shift, and go to state 53
+    MINUS   shift, and go to state 54
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+
+    $default  reduce using rule 48 (arg_val)
+
+
+State 112
+
+   18 func_dec: DEF arg_func_type IDENT LPAREN func_inp RPAREN . LCURL function_block RCURL
+
+    LCURL  shift, and go to state 119
+
+
+State 113
+
+   20 func_inp: arg_func COMMA . func_inp
+
+    BYTE      shift, and go to state 36
+    INT       shift, and go to state 37
+    STRTYPE   shift, and go to state 38
+    LISTTYPE  shift, and go to state 39
+    VOIDTYPE  shift, and go to state 40
+
+    $default  reduce using rule 21 (func_inp)
+
+    func_inp            go to state 120
+    arg_func            go to state 102
+    arg_func_type       go to state 103
+    arg_func_list_type  go to state 42
+
+
+State 114
+
+   22 arg_func: arg_func_type IDENT .
+
+    $default  reduce using rule 22 (arg_func)
+
+
+State 115
+
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+   61 range: expression . TO expression
+   62      | expression . TO expression SEMICOL step
+
+    PLUS    shift, and go to state 53
+    MINUS   shift, and go to state 54
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+    TO      shift, and go to state 121
+
+
+State 116
+
+   59 flow_control: LOOP LPAREN datatype IDENT SEMICOL range . RPAREN block
+
+    RPAREN  shift, and go to state 122
+
+
+State 117
+
+   71 block: LCURL program . RCURL
+
+    RCURL  shift, and go to state 123
+
+
+State 118
+
+   56 list_dec: LISTTYPE LBRACK expression RBRACK datatype IDENT . ASSIGN LBRACK elem_list RBRACK
+
+    ASSIGN  shift, and go to state 124
+
+
+State 119
+
+   18 func_dec: DEF arg_func_type IDENT LPAREN func_inp RPAREN LCURL . function_block RCURL
+
+    CALL          shift, and go to state 3
+    DEF           shift, and go to state 4
+    RTRN          shift, and go to state 125
+    LOOP          shift, and go to state 5
+    IF            shift, and go to state 6
+    BYTE          shift, and go to state 7
+    INT           shift, and go to state 8
+    STRTYPE       shift, and go to state 9
+    LPAREN        shift, and go to state 10
+    LISTTYPE      shift, and go to state 11
+    COMMENT       shift, and go to state 12
+    MULTICOMMENT  shift, and go to state 13
+    IDENT         shift, and go to state 14
+    NUMBER        shift, and go to state 15
+    STR           shift, and go to state 16
+
+    statement         go to state 126
+    declarations      go to state 19
+    comment           go to state 20
+    change_val        go to state 21
+    list_change       go to state 22
+    func_dec          go to state 23
+    function_block    go to state 127
+    function_line     go to state 128
+    return            go to state 129
+    expression        go to state 24
+    function_call     go to state 25
+    variable_dec      go to state 26
+    datatype          go to state 27
+    list_type         go to state 28
+    list_dec          go to state 29
+    flow_control      go to state 30
+    list_indentation  go to state 31
+
+
+State 120
+
+   20 func_inp: arg_func COMMA func_inp .
+
+    $default  reduce using rule 20 (func_inp)
+
+
+State 121
+
+   61 range: expression TO . expression
+   62      | expression TO . expression SEMICOL step
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 130
+    function_call     go to state 25
+    list_indentation  go to state 31
+
+
+State 122
+
+   59 flow_control: LOOP LPAREN datatype IDENT SEMICOL range RPAREN . block
+
+    LCURL  shift, and go to state 107
+
+    block  go to state 131
+
+
+State 123
+
+   71 block: LCURL program RCURL .
+
+    $default  reduce using rule 71 (block)
+
+
+State 124
+
+   56 list_dec: LISTTYPE LBRACK expression RBRACK datatype IDENT ASSIGN . LBRACK elem_list RBRACK
+
+    LBRACK  shift, and go to state 132
+
+
+State 125
+
+   33 return: RTRN . expression
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 133
+    function_call     go to state 25
+    list_indentation  go to state 31
+
+
+State 126
+
+   31 function_line: statement .
+
+    $default  reduce using rule 31 (function_line)
+
+
+State 127
+
+   18 func_dec: DEF arg_func_type IDENT LPAREN func_inp RPAREN LCURL function_block . RCURL
+   30 function_block: function_block . function_line
+
+    RCURL         shift, and go to state 134
+    CALL          shift, and go to state 3
+    DEF           shift, and go to state 4
+    RTRN          shift, and go to state 125
+    LOOP          shift, and go to state 5
+    IF            shift, and go to state 6
+    BYTE          shift, and go to state 7
+    INT           shift, and go to state 8
+    STRTYPE       shift, and go to state 9
+    LPAREN        shift, and go to state 10
+    LISTTYPE      shift, and go to state 11
+    COMMENT       shift, and go to state 12
+    MULTICOMMENT  shift, and go to state 13
+    IDENT         shift, and go to state 14
+    NUMBER        shift, and go to state 15
+    STR           shift, and go to state 16
+
+    statement         go to state 126
+    declarations      go to state 19
+    comment           go to state 20
+    change_val        go to state 21
+    list_change       go to state 22
+    func_dec          go to state 23
+    function_line     go to state 135
+    return            go to state 129
+    expression        go to state 24
+    function_call     go to state 25
+    variable_dec      go to state 26
+    datatype          go to state 27
+    list_type         go to state 28
+    list_dec          go to state 29
+    flow_control      go to state 30
+    list_indentation  go to state 31
+
+
+State 128
+
+   29 function_block: function_line .
+
+    $default  reduce using rule 29 (function_block)
+
+
+State 129
+
+   32 function_line: return .
+
+    $default  reduce using rule 32 (function_line)
+
+
+State 130
+
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+   61 range: expression TO expression .
+   62      | expression TO expression . SEMICOL step
+
+    PLUS     shift, and go to state 53
+    MINUS    shift, and go to state 54
+    TIMES    shift, and go to state 55
+    DIVIDE   shift, and go to state 56
+    SEMICOL  shift, and go to state 136
+
+    $default  reduce using rule 61 (range)
+
+
+State 131
+
+   59 flow_control: LOOP LPAREN datatype IDENT SEMICOL range RPAREN block .
+
+    $default  reduce using rule 59 (flow_control)
+
+
+State 132
+
+   56 list_dec: LISTTYPE LBRACK expression RBRACK datatype IDENT ASSIGN LBRACK . elem_list RBRACK
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 137
+    function_call     go to state 25
+    elem_list         go to state 138
+    list_indentation  go to state 31
+
+
+State 133
+
+   33 return: RTRN expression .
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+
+    PLUS    shift, and go to state 53
+    MINUS   shift, and go to state 54
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+
+    $default  reduce using rule 33 (return)
+
+
+State 134
+
+   18 func_dec: DEF arg_func_type IDENT LPAREN func_inp RPAREN LCURL function_block RCURL .
+
+    $default  reduce using rule 18 (func_dec)
+
+
+State 135
+
+   30 function_block: function_block function_line .
+
+    $default  reduce using rule 30 (function_block)
+
+
+State 136
+
+   62 range: expression TO expression SEMICOL . step
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 139
+    function_call     go to state 25
+    step              go to state 140
+    list_indentation  go to state 31
+
+
+State 137
+
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+   57 elem_list: expression .
+
+    PLUS    shift, and go to state 53
+    MINUS   shift, and go to state 54
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+
+    $default  reduce using rule 57 (elem_list)
+
+
+State 138
+
+   56 list_dec: LISTTYPE LBRACK expression RBRACK datatype IDENT ASSIGN LBRACK elem_list . RBRACK
+   58 elem_list: elem_list . COMMA expression
+
+    COMMA   shift, and go to state 141
+    RBRACK  shift, and go to state 142
+
+
+State 139
+
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+   63 step: expression .
+
+    PLUS    shift, and go to state 53
+    MINUS   shift, and go to state 54
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+
+    $default  reduce using rule 63 (step)
+
+
+State 140
+
+   62 range: expression TO expression SEMICOL step .
+
+    $default  reduce using rule 62 (range)
+
+
+State 141
+
+   58 elem_list: elem_list COMMA . expression
+
+    CALL    shift, and go to state 3
+    LPAREN  shift, and go to state 10
+    IDENT   shift, and go to state 45
+    NUMBER  shift, and go to state 15
+    STR     shift, and go to state 16
+
+    expression        go to state 143
+    function_call     go to state 25
+    list_indentation  go to state 31
+
+
+State 142
+
+   56 list_dec: LISTTYPE LBRACK expression RBRACK datatype IDENT ASSIGN LBRACK elem_list RBRACK .
+
+    $default  reduce using rule 56 (list_dec)
+
+
+State 143
+
+   34 expression: expression . PLUS expression
+   35           | expression . MINUS expression
+   36           | expression . TIMES expression
+   37           | expression . DIVIDE expression
+   58 elem_list: elem_list COMMA expression .
+
+    PLUS    shift, and go to state 53
+    MINUS   shift, and go to state 54
+    TIMES   shift, and go to state 55
+    DIVIDE  shift, and go to state 56
+
+    $default  reduce using rule 58 (elem_list)
