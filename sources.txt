@@ -3,3 +3,9 @@ https://www.kiv.zcu.cz/~rohlik/vyuka/fjp/Cv03_2002/manualy/Using%20Lex%20and%20Y
 https://www.gnu.org/software/bison/manual/bison.html#Examples
 https://www.ibm.com/docs/en/aix/7.1?topic=information-example-program-lex-yacc-programs
 https://www2.cs.arizona.edu/~debray/Teaching/CSc453/DOCS/conflicts.pdf
+
+Knihy:
+    https://web.iitd.ac.in/~sumeet/flex__bison.pdf
+        ISBN: 978-0-596-15597-1
+    https://theses.cz/id/s6otso/20999.pdf?zpet=%2Fvyhledavani%2F%3Fsearch%3Dparser%20jazyk%26start%3D22
+        ISBN: 3-540-60649-1
