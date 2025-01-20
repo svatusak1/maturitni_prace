@@ -202,16 +202,27 @@ int main(void) {
     FILE *fp;
     fp = fopen("test.rog","r");
     yyin = fp;
-    printf("ahoj");
-    int ret = yyparse();
-    printf("yyparse return: %d", ret);
+    yyparse();
     fclose(fp);
 
 
     printf("\n\n");
-    printf("\nSYMBOL   DATATYPE   TYPE   LINE NUMBER \n");
+    printf("\nNAME   RET_DATATYPE   INP_DATATYPE \n");
     printf("_______________________________________\n\n");
     int i=0;
+    for(i=0; i<count_function_table; i++) {
+        printf("%s\t%s\t%s\t", function_table[i].id_name, function_table[i].data_type);
+        int a = 0;
+        while (function_table[i].array_datatype[a]){
+            printf("%s\t", function_table[i].array_datatype[a]);
+        }
+    }
+    printf("\n\n");
+
+    printf("\n\n");
+    printf("\nSYMBOL   DATATYPE   TYPE   LINE NUMBER \n");
+    printf("_______________________________________\n\n");
+    i=0;
     for(i=0; i<count_symbol_table; i++) {
         printf("%s\t%s\t%s\t%d\t\n", symbol_table[i].id_name, symbol_table[i].data_type, symbol_table[i].type, symbol_table[i].line_number);
     }
