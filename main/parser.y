@@ -10,18 +10,19 @@ extern FILE *yyin;
 
 char type[10];
 void add(char, char*);
+void add_func(char*);
 struct symbolDataType {
-    char * data_type;
-    char * id_name;
-    char * type;
+    char *data_type;
+    char *id_name;
+    char *type;
     int line_number;
 } symbol_table[50];
 int count_symbol_table = 0;
 
 struct functionDataType {
-    char * data_type;
+    char *data_type;
     char array_datatype[20][10];
-    char * id_name;
+    char *id_name;
 } function_table[50];
 int array_input_type_index = 0;
 int count_function_table = 0;
@@ -31,7 +32,7 @@ extern int input_file_line_no;
 
 void insert_type(char*);
 
-struct node* mknode(struct node *left, struct node *right, char *token);
+struct node *mknode(struct node *left, struct node *right, char *token);
 
 struct node{
     struct node *left;
@@ -39,7 +40,7 @@ struct node{
     char *token;
 };
 
-struct node* head = NULL;
+struct node *head;
 void printtree(struct node*);
 void printInorder(struct node *);
 
@@ -50,9 +51,11 @@ void printInorder(struct node *);
     char end_node[100];
 }
 
-%token  NUMBER STR IDENT START_OF_FILE REMLIST ADDLIST PLUS MINUS TIMES DIVIDE RCURL SEMICOL COMMA EQL NEQ LSS GTR LEQ GEQ CALL DEF RTRN LOOP TO IF BYTE INT STRTYPE LPAREN RPAREN LBRACK RBRACK LCURL LISTTYPE VOIDTYPE ASSIGN CAPACITY LEN COMMENT MULTICOMMENT
+%token <end_node> START_OF_FILE DEF IDENT
+%token  NUMBER STR REMLIST ADDLIST PLUS MINUS TIMES DIVIDE RCURL SEMICOL COMMA EQL NEQ LSS GTR LEQ GEQ CALL RTRN LOOP TO IF BYTE INT STRTYPE LPAREN RPAREN LBRACK RBRACK LCURL LISTTYPE VOIDTYPE ASSIGN CAPACITY LEN COMMENT MULTICOMMENT
 
-%type expression st program statement declarations function_inp arg_func func_dec function_block return variable_dec change_val comment flow_control range block step condition function_line function_call arg_val value arg_func_type
+%type <obj_node> st program statement expression declarations flow_control change_var comment func_dec variable_dec function_block arg_func_type
+%type   function_inp arg_func func_dec return variable_dec range block step condition function_line function_call arg_val value 
 %type datatype comp
 
 %left IDENT
@@ -67,38 +70,39 @@ void printInorder(struct node *);
 
 %%
 
-st : START_OF_FILE program 
-   
-
+st : START_OF_FILE { add('K', $1); } program { $$ = mknode($3, NULL, "start"); head = $$;  }
    ;
 
-program : statement program 
-      | statement 
-      ;
+program : statement program { $$ = mknode($2, $1, "statement"); }
+        | statement { $$ = mknode($1, NULL, "statement"); }
+        ;
 
 statement : declarations
-        | expression
-        | flow_control 
-        | change_val
-        | comment 
+          | expression { $$ = mknode($1, NULL, "expression"); }
+          | flow_control { $$ = mknode($1, NULL, "flow control"); }
+          | change_var { $$ = mknode($1, NULL, "change variable"); }
+          | comment { $$ = mknode(NULL, NULL, "comment"); } 
           ;
 
 
-declarations : func_dec 
-             | variable_dec 
+declarations : func_dec { $$ = mknode($1, NULL, "function declaration"); }
+             | variable_dec { $$ = mknode($1, NULL, "variable declaration"); }
              ;
 
 
-comment : COMMENT
-      | MULTICOMMENT 
-      ;
+comment : COMMENT {}
+        | MULTICOMMENT {} 
+        ;
 
-change_val : IDENT ASSIGN expression 
+change_var : IDENT ASSIGN expression
+           ;
+
+func_dec : DEF { add('K', $1); } arg_func_type IDENT { add_func($4); } LPAREN function_inp RPAREN
+           LCURL function_block RCURL
+         {
+         $$ = mknode($10, NULL, $4);
+         }
          ;
-
-func_dec : DEF arg_func_type IDENT LPAREN function_inp RPAREN 
-             LCURL function_block RCURL
-             ;
 
 function_inp : arg_func
              | arg_func COMMA function_inp 
@@ -228,20 +232,21 @@ int main(void) {
     }
     printf("\n\n");
 
+
     printtree(head);
 
     return 0;
 
 }
 
-void insert_type(char* type){
+void insert_type(char *type){
     int ret = snprintf(type, 10, "%s", type);
     if (ret < strlen(type)){
         yyerror("error inserting type");
     }
 }
 
-int search(char* id){
+int search(char *id){
     int i;
     for (i = count_symbol_table-1; i>= 0; i--){
         if (strcmp(symbol_table[i].id_name, id) == 0){
@@ -252,12 +257,12 @@ int search(char* id){
 }
 
 
-void add(char c, char* id){
+void add(char c, char *id){
     
     int found = search(id);
 
     if (!found){
-        symbol_table[count_symbol_table].id_name = id;
+        symbol_table[count_symbol_table].id_name = strdup(id);
         symbol_table[count_symbol_table].line_number = input_file_line_no;
         switch (c){
         /*
@@ -268,12 +273,12 @@ void add(char c, char* id){
         I function call / invoke
         */
             case 'K':
-                symbol_table[count_symbol_table].data_type=strdup("N/A");
+                symbol_table[count_symbol_table].data_type = "N/A";
                 symbol_table[count_symbol_table].type = "Keyword";
                 break;
 
             case 'C':
-                symbol_table[count_symbol_table].data_type = strdup("CONSTAT");
+                symbol_table[count_symbol_table].data_type = "CONSTAT";
                 symbol_table[count_symbol_table].type = "Constant";
                 break;
 
@@ -300,9 +305,34 @@ void add(char c, char* id){
     }
 
 }
-struct node* mknode(struct node *left, struct node *right, char *token){
-    struct node* newnode = (struct node*)malloc(sizeof(struct node));
-    char* newstr = (char*)malloc(strlen(token)+1);
+
+
+
+int search_func(char *name){
+    int i;
+    for (i = count_function_table-1; i>= 0; i--){
+        if (strcmp(function_table[i].id_name, name) == 0){
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void add_func(char *name){
+    int found = search_func(name);
+
+    if (found){
+        yyerror("Multiple function declarations aren't allowed");
+    }
+
+    function_table[count_function_table].id_name = strdup(name);
+    function_table[count_function_table].data_type = strdup(type);
+
+}
+
+struct node *mknode(struct node *left, struct node *right, char *token){
+    struct node *newnode = (struct node*)malloc(sizeof(struct node));
+    char *newstr = (char*)malloc(strlen(token)+1);
     strcpy(newstr, token);
 
     newnode->left = left;
@@ -313,7 +343,7 @@ struct node* mknode(struct node *left, struct node *right, char *token){
 
 }
 
-void printtree(struct node* root){
+void printtree(struct node *root){
     printf("\n\n Inorder traversal of the Parse Tree: \n\n");
     if (root){
         printInorder(root);
@@ -324,11 +354,11 @@ void printtree(struct node* root){
 }
 
 void printInorder(struct node *tree) {
-	int i;
-	if (tree->left) {
-		printInorder(tree->left);
-	}
-	printf("%s, ", tree->token);
+    printf("%s, ", tree->token);
+    fflush(stdout);
+    if (tree->left){
+        printInorder(tree->left);
+    }
 	if (tree->right) {
 		printInorder(tree->right);
 	}

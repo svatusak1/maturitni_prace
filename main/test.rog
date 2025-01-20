@@ -32,4 +32,3 @@ func int add(int dobrman)
 
     return adolf
 }
-

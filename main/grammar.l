@@ -25,7 +25,7 @@ letter             [A-Za-z]
 <COMMENTSTATE>[#\]] { /* rest */}
 
 
-"start-ROG" {  return START_OF_FILE;  }
+"start-ROG" {  strcpy(yylval.end_node, yytext); return START_OF_FILE;  }
 
 "+" {  strcpy(yylval.end_node, yytext); return PLUS; }
 "-" {  strcpy(yylval.end_node, yytext); return MINUS; }
@@ -65,7 +65,8 @@ letter             [A-Za-z]
 "len" {  strcpy(yylval.end_node, yytext); return LEN; }
 
 
-[\n] { input_file_line_no ++; }
+[\n] {  input_file_line_no ++; }
+
 whitespace
 
 {letter}({letter}|"_"|{digit})* {  strcpy(yylval.end_node, yytext); return IDENT; }
