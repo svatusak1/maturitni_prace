@@ -54,46 +54,46 @@ extern int yydebug;
     YYEOF = 0,                     /* "end of file"  */
     YYerror = 256,                 /* error  */
     YYUNDEF = 257,                 /* "invalid token"  */
-    START_OF_FILE = 258,           /* START_OF_FILE  */
-    REMLIST = 259,                 /* REMLIST  */
-    ADDLIST = 260,                 /* ADDLIST  */
-    PLUS = 261,                    /* PLUS  */
-    MINUS = 262,                   /* MINUS  */
-    TIMES = 263,                   /* TIMES  */
-    DIVIDE = 264,                  /* DIVIDE  */
-    RCURL = 265,                   /* RCURL  */
-    SEMICOL = 266,                 /* SEMICOL  */
-    COMMA = 267,                   /* COMMA  */
-    EQL = 268,                     /* EQL  */
-    NEQ = 269,                     /* NEQ  */
-    LSS = 270,                     /* LSS  */
-    GTR = 271,                     /* GTR  */
-    LEQ = 272,                     /* LEQ  */
-    GEQ = 273,                     /* GEQ  */
-    CALL = 274,                    /* CALL  */
-    DEF = 275,                     /* DEF  */
-    RTRN = 276,                    /* RTRN  */
-    LOOP = 277,                    /* LOOP  */
-    TO = 278,                      /* TO  */
-    IF = 279,                      /* IF  */
-    BYTE = 280,                    /* BYTE  */
-    INT = 281,                     /* INT  */
-    STRTYPE = 282,                 /* STRTYPE  */
-    LPAREN = 283,                  /* LPAREN  */
-    RPAREN = 284,                  /* RPAREN  */
-    LBRACK = 285,                  /* LBRACK  */
-    RBRACK = 286,                  /* RBRACK  */
-    LCURL = 287,                   /* LCURL  */
-    LISTTYPE = 288,                /* LISTTYPE  */
-    VOIDTYPE = 289,                /* VOIDTYPE  */
-    ASSIGN = 290,                  /* ASSIGN  */
-    CAPACITY = 291,                /* CAPACITY  */
-    LEN = 292,                     /* LEN  */
-    COMMENT = 293,                 /* COMMENT  */
-    MULTICOMMENT = 294,            /* MULTICOMMENT  */
-    IDENT = 295,                   /* IDENT  */
-    NUMBER = 296,                  /* NUMBER  */
-    STR = 297                      /* STR  */
+    NUMBER = 258,                  /* NUMBER  */
+    STR = 259,                     /* STR  */
+    IDENT = 260,                   /* IDENT  */
+    START_OF_FILE = 261,           /* START_OF_FILE  */
+    REMLIST = 262,                 /* REMLIST  */
+    ADDLIST = 263,                 /* ADDLIST  */
+    PLUS = 264,                    /* PLUS  */
+    MINUS = 265,                   /* MINUS  */
+    TIMES = 266,                   /* TIMES  */
+    DIVIDE = 267,                  /* DIVIDE  */
+    RCURL = 268,                   /* RCURL  */
+    SEMICOL = 269,                 /* SEMICOL  */
+    COMMA = 270,                   /* COMMA  */
+    EQL = 271,                     /* EQL  */
+    NEQ = 272,                     /* NEQ  */
+    LSS = 273,                     /* LSS  */
+    GTR = 274,                     /* GTR  */
+    LEQ = 275,                     /* LEQ  */
+    GEQ = 276,                     /* GEQ  */
+    CALL = 277,                    /* CALL  */
+    DEF = 278,                     /* DEF  */
+    RTRN = 279,                    /* RTRN  */
+    LOOP = 280,                    /* LOOP  */
+    TO = 281,                      /* TO  */
+    IF = 282,                      /* IF  */
+    BYTE = 283,                    /* BYTE  */
+    INT = 284,                     /* INT  */
+    STRTYPE = 285,                 /* STRTYPE  */
+    LPAREN = 286,                  /* LPAREN  */
+    RPAREN = 287,                  /* RPAREN  */
+    LBRACK = 288,                  /* LBRACK  */
+    RBRACK = 289,                  /* RBRACK  */
+    LCURL = 290,                   /* LCURL  */
+    LISTTYPE = 291,                /* LISTTYPE  */
+    VOIDTYPE = 292,                /* VOIDTYPE  */
+    ASSIGN = 293,                  /* ASSIGN  */
+    CAPACITY = 294,                /* CAPACITY  */
+    LEN = 295,                     /* LEN  */
+    COMMENT = 296,                 /* COMMENT  */
+    MULTICOMMENT = 297             /* MULTICOMMENT  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -102,55 +102,55 @@ extern int yydebug;
 #define YYEOF 0
 #define YYerror 256
 #define YYUNDEF 257
-#define START_OF_FILE 258
-#define REMLIST 259
-#define ADDLIST 260
-#define PLUS 261
-#define MINUS 262
-#define TIMES 263
-#define DIVIDE 264
-#define RCURL 265
-#define SEMICOL 266
-#define COMMA 267
-#define EQL 268
-#define NEQ 269
-#define LSS 270
-#define GTR 271
-#define LEQ 272
-#define GEQ 273
-#define CALL 274
-#define DEF 275
-#define RTRN 276
-#define LOOP 277
-#define TO 278
-#define IF 279
-#define BYTE 280
-#define INT 281
-#define STRTYPE 282
-#define LPAREN 283
-#define RPAREN 284
-#define LBRACK 285
-#define RBRACK 286
-#define LCURL 287
-#define LISTTYPE 288
-#define VOIDTYPE 289
-#define ASSIGN 290
-#define CAPACITY 291
-#define LEN 292
-#define COMMENT 293
-#define MULTICOMMENT 294
-#define IDENT 295
-#define NUMBER 296
-#define STR 297
+#define NUMBER 258
+#define STR 259
+#define IDENT 260
+#define START_OF_FILE 261
+#define REMLIST 262
+#define ADDLIST 263
+#define PLUS 264
+#define MINUS 265
+#define TIMES 266
+#define DIVIDE 267
+#define RCURL 268
+#define SEMICOL 269
+#define COMMA 270
+#define EQL 271
+#define NEQ 272
+#define LSS 273
+#define GTR 274
+#define LEQ 275
+#define GEQ 276
+#define CALL 277
+#define DEF 278
+#define RTRN 279
+#define LOOP 280
+#define TO 281
+#define IF 282
+#define BYTE 283
+#define INT 284
+#define STRTYPE 285
+#define LPAREN 286
+#define RPAREN 287
+#define LBRACK 288
+#define RBRACK 289
+#define LCURL 290
+#define LISTTYPE 291
+#define VOIDTYPE 292
+#define ASSIGN 293
+#define CAPACITY 294
+#define LEN 295
+#define COMMENT 296
+#define MULTICOMMENT 297
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 22 "parser.y"
+#line 48 "parser.y"
 
-    char *node_type;
-    struct node *node_obj;
+    struct node *obj_node;
+    char end_node[100];
 
 #line 156 "y.tab.h"
 

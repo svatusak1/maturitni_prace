@@ -1,0 +1,115 @@
+-----------
+declarations
+    function declaration
+        #code begin
+            define $return type(from char* type)$ @$name$($input variables from char array array_type$){
+                $prg$
+            }
+        #code end
+
+    variable declaration
+        int 
+        #code begin
+            %$name$ = i32 $expression$
+        #code end
+
+        byte
+        #code begin
+            %$name$ = i8 $expression$
+        #code end
+
+        str
+        #code begin
+            %$name$ = [$length of string $ x i8] $expression$
+        #code end
+-----------
+expressions
+    plus
+    #code begin
+        add $type (get from table)$ $val1$ $val2$
+    #code end
+
+    minus
+    #code begin
+        sub $type (get from table)$ $val1$ $val2$
+    #code end
+
+    times
+    #code begin
+        mul $type (get from table)$ $val1$ $val2$
+    #code end
+
+    divide
+    #code begin
+        udiv $type (get from table)$ $val1$ $val2$
+    #code end
+
+    value
+        IDENT
+            $type (get from table)$ $name$
+        NUMBER
+            int32 $number$
+        STR
+            [$length of string $ x i8] $string$
+        function_call
+            call {$ret types(from table)$} @$name$($inp vars( datatypes from table)$)
+------------
+flow control
+    for
+            %i = alloca i32
+            store i32 $range (spodni hranice)$, ptr %i
+            br label %loop_start
+
+        loop_start:
+            ; Load the index and check if it equals y.
+            %i.check = load i32, ptr %i
+            %done = icmp eq i32 %i.check, $range (horni hranice)$
+            br i1 %done, label %exit, label %loop
+
+        loop:
+            code
+
+            ; i += 1
+            %i.old = load i32, ptr %i
+            %i.new = add i32 %i.old, 1
+            store i32 %i.new, ptr %i
+
+            br label %loop_start
+
+        exit:
+            %r.ret = $return value$
+            ret i32 %r.ret
+
+
+    for loop code:
+        must be different -- pointer manipulation due to the loop
+            variable decl
+                %$name$ alloca $datatype$
+                store $datatype$ $value$, ptr $name$
+            times
+                %r.old = load i32, ptr %r
+                %r.new = mul i32 %r.old, %x
+                store i32 %r.new, ptr %r
+        
+
+    if
+
+        EQUALS
+            %condition = icmp eq i32 %$name var 1$, %$name var 2$
+
+        %condition = 
+        br i1 %condition, label %ifblock$line_number of if (from table)$, label %after$line_number of if (from table)$
+
+        ifblock12:
+           if block 
+
+        after12:
+
+        ....
+
+
+
+------------
+change val
+    %$name$ = expression
+

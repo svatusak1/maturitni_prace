@@ -411,7 +411,7 @@ static const YY_CHAR yy_ec[256] =
 static const YY_CHAR yy_meta[46] =
     {   0,
         1,    2,    1,    1,    3,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    4,    4,    4,
+        1,    1,    4,    1,    1,    1,    1,    4,    4,    4,
         4,    1,    3,    4,    4,    4,    4,    4,    4,    4,
         4,    4,    4,    4,    4,    4,    4,    4,    4,    4,
         4,    4,    4,    1,    1
@@ -423,14 +423,14 @@ static const flex_int16_t yy_base[119] =
       140,  140,  140,  126,  140,   37,  140,  121,  140,  117,
       116,  115,    0,  140,  140,   87,  104,   88,   19,   23,
        98,   87,   90,   93,  140,  140,    0,  140,  100,  140,
-      118,  117,   98,  140,  140,  106,  140,  140,  140,  140,
-        0,   79,   23,   83,    0,   77,   81,   76,   78,   73,
-       26,   79,   78,    0,  104,    0,   86,   78,   73,   80,
-       77,    0,    0,   64,   66,   61,   63,    0,   71,   59,
-       92,    0,  140,    0,    0,   69,    0,    0,    0,   58,
-       55,    0,   64,  140,   60,   57,   79,   51,   49,    0,
+      118,  140,   99,  140,  140,  107,  140,  140,  140,  140,
+        0,   80,   23,   84,    0,   78,   82,   77,   79,   74,
+       26,   80,   79,    0,  105,    0,   87,   79,   74,   81,
+       78,    0,    0,   65,   67,   62,   64,    0,   72,   60,
+       93,    0,  140,    0,    0,   70,    0,    0,    0,   59,
+       56,    0,   65,  140,   61,   58,   80,   52,   50,    0,
 
-       66,   50,   40,   56,   46,    0,   43,   34,  140,   31,
+       67,   51,   43,   63,   51,    0,   43,   34,  140,   31,
         0,  140,   65,   69,   53,   73,   77,   81
     } ;
 
@@ -440,7 +440,7 @@ static const flex_int16_t yy_def[119] =
       112,  112,  112,  112,  112,  112,  112,  112,  112,  112,
       112,  112,  115,  112,  112,  115,  115,  115,  115,  115,
       115,  115,  115,  115,  112,  112,  116,  112,  112,  112,
-      114,  114,  117,  112,  112,  112,  112,  112,  112,  112,
+      114,  112,  117,  112,  112,  112,  112,  112,  112,  112,
       115,  115,  115,  115,  115,  115,  115,  115,  115,  115,
       115,  115,  115,  116,  112,  118,  112,  115,  115,  115,
       115,  115,  115,  115,  115,  115,  115,  115,  115,  115,
@@ -460,13 +460,13 @@ static const flex_int16_t yy_nxt[186] =
        33,   34,   23,   35,   36,   38,   38,   45,   55,   46,
        77,   57,   56,   47,   58,   69,   51,   59,   70,  111,
       110,  109,   78,   39,   39,   37,   37,   37,   37,   41,
-      108,   41,   41,   64,   64,  107,   64,   66,   66,   66,
-       66,   82,  106,   82,   82,  105,  104,  103,  102,  101,
-      100,   99,   98,   97,   96,   95,   94,   93,   92,   91,
+       41,   41,   41,   64,   64,  108,   64,   66,   66,   66,
+       66,   82,  107,   82,   82,  106,  105,  104,  103,  102,
+      101,  100,   99,   98,   97,   96,   95,   94,   93,   92,
 
-       90,   89,   88,   87,   86,   85,   84,   83,   81,   80,
-       79,   76,   75,   74,   73,   72,   71,   68,   46,   67,
-       42,   42,   65,   63,   62,   61,   60,   54,   53,   52,
+       91,   90,   89,   88,   87,   86,   85,   84,   83,   81,
+       80,   79,   76,   75,   74,   73,   72,   71,   68,   46,
+       67,   42,   65,   63,   62,   61,   60,   54,   53,   52,
        50,   49,   48,   46,   44,   43,   42,   40,  112,    5,
       112,  112,  112,  112,  112,  112,  112,  112,  112,  112,
       112,  112,  112,  112,  112,  112,  112,  112,  112,  112,
@@ -484,13 +484,13 @@ static const flex_int16_t yy_chk[186] =
         1,    1,    1,    1,    1,    3,    4,   16,   29,   16,
        61,   30,   29,   16,   30,   53,  115,   30,   53,  110,
       108,  107,   61,    3,    4,  113,  113,  113,  113,  114,
-      105,  114,  114,  116,  116,  104,  116,  117,  117,  117,
-      117,  118,  103,  118,  118,  102,  101,   99,   98,   97,
-       96,   95,   93,   91,   90,   86,   81,   80,   79,   77,
+      114,  114,  114,  116,  116,  105,  116,  117,  117,  117,
+      117,  118,  104,  118,  118,  103,  102,  101,   99,   98,
+       97,   96,   95,   93,   91,   90,   86,   81,   80,   79,
 
-       76,   75,   74,   71,   70,   69,   68,   67,   65,   63,
-       62,   60,   59,   58,   57,   56,   54,   52,   46,   43,
-       42,   41,   39,   34,   33,   32,   31,   28,   27,   26,
+       77,   76,   75,   74,   71,   70,   69,   68,   67,   65,
+       63,   62,   60,   59,   58,   57,   56,   54,   52,   46,
+       43,   41,   39,   34,   33,   32,   31,   28,   27,   26,
        22,   21,   20,   18,   14,   10,    9,    8,    5,  112,
       112,  112,  112,  112,  112,  112,  112,  112,  112,  112,
       112,  112,  112,  112,  112,  112,  112,  112,  112,  112,
@@ -518,7 +518,7 @@ char *yytext;
 #include <string.h>
 #include "y.tab.h"
 
-    int input_line_no = 1;
+    int input_file_line_no = 1;
 #line 522 "lex.yy.c"
 
 #line 524 "lex.yy.c"
@@ -743,7 +743,7 @@ YY_DECL
 
 
 #line 17 "grammar.l"
-    /*.nameentify online comments */
+    /*identify online comments */
 #line 747 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
@@ -807,7 +807,7 @@ YY_RULE_SETUP
 #line 18 "grammar.l"
 {  return COMMENT; } 
 	YY_BREAK
-/*.nameentify multiline comments */
+/*.identify multiline comments */
 case 2:
 YY_RULE_SETUP
 #line 21 "grammar.l"
@@ -838,212 +838,207 @@ YY_RULE_SETUP
 case 7:
 YY_RULE_SETUP
 #line 31 "grammar.l"
-{  yylval.node_type = strdup(yytext); return PLUS; }
+{  strcpy(yylval.end_node, yytext); return PLUS; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
 #line 32 "grammar.l"
-{  yylval.node_type = strdup(yytext); return MINUS; }
+{  strcpy(yylval.end_node, yytext); return MINUS; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
 #line 33 "grammar.l"
-{  yylval.node_type = strdup(yytext); return TIMES; }
+{  strcpy(yylval.end_node, yytext); return TIMES; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
 #line 34 "grammar.l"
-{  yylval.node_type = strdup(yytext); return DIVIDE; }
+{  strcpy(yylval.end_node, yytext); return DIVIDE; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
 #line 35 "grammar.l"
-{  yylval.node_type = strdup(yytext); return SEMICOL; }
+{  strcpy(yylval.end_node, yytext); return SEMICOL; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
 #line 36 "grammar.l"
-{  yylval.node_type = strdup(yytext); return COMMA; }
+{  strcpy(yylval.end_node, yytext); return COMMA; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
 #line 37 "grammar.l"
-{  yylval.node_type = strdup(yytext); return ASSIGN; }
+{  strcpy(yylval.end_node, yytext); return ASSIGN; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
 #line 38 "grammar.l"
-{  yylval.node_type = strdup(yytext); return EQL; }
+{  strcpy(yylval.end_node, yytext); return EQL; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
 #line 39 "grammar.l"
-{  yylval.node_type = strdup(yytext); return NEQ; }
+{  strcpy(yylval.end_node, yytext); return NEQ; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
 #line 40 "grammar.l"
-{  yylval.node_type = strdup(yytext); return LSS; }
+{  strcpy(yylval.end_node, yytext); return LSS; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
 #line 41 "grammar.l"
-{  yylval.node_type = strdup(yytext); return GTR; }
+{  strcpy(yylval.end_node, yytext); return GTR; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
 #line 42 "grammar.l"
-{  yylval.node_type = strdup(yytext); return LEQ; }
+{  strcpy(yylval.end_node, yytext); return LEQ; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
 #line 43 "grammar.l"
-{  yylval.node_type = strdup(yytext); return GEQ; }
+{  strcpy(yylval.end_node, yytext); return GEQ; }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
 #line 44 "grammar.l"
-{  yylval.node_type = strdup(yytext); return REMLIST; }
+{  strcpy(yylval.end_node, yytext); return REMLIST; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
 #line 45 "grammar.l"
-{  yylval.node_type = strdup(yytext); return ADDLIST; }
+{  strcpy(yylval.end_node, yytext); return ADDLIST; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
 #line 46 "grammar.l"
-{  yylval.node_type = strdup(yytext); return TO; }
+{  strcpy(yylval.end_node, yytext); return TO; }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
 #line 48 "grammar.l"
-{  yylval.node_type = strdup(yytext); return LPAREN; }
+{  strcpy(yylval.end_node, yytext); return LPAREN; }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
 #line 49 "grammar.l"
-{  yylval.node_type = strdup(yytext); return RPAREN; }
+{  strcpy(yylval.end_node, yytext); return RPAREN; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
 #line 50 "grammar.l"
-{  yylval.node_type = strdup(yytext); return LBRACK; }
+{  strcpy(yylval.end_node, yytext); return LBRACK; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
 #line 51 "grammar.l"
-{  yylval.node_type = strdup(yytext); return RBRACK; }
+{  strcpy(yylval.end_node, yytext); return RBRACK; }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
 #line 52 "grammar.l"
-{  yylval.node_type = strdup(yytext); return LCURL; }
+{  strcpy(yylval.end_node, yytext); return LCURL; }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
 #line 53 "grammar.l"
-{  yylval.node_type = strdup(yytext); return RCURL; }
+{  strcpy(yylval.end_node, yytext); return RCURL; }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
 #line 55 "grammar.l"
-{ yylval.node_type = strdup(yytext); return CALL; }
+{  strcpy(yylval.end_node, yytext); return CALL; }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
 #line 56 "grammar.l"
-{  yylval.node_type = strdup(yytext); return DEF; }
+{  strcpy(yylval.end_node, yytext); return DEF; }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
 #line 57 "grammar.l"
-{  yylval.node_type = strdup(yytext); return RTRN; }
+{  strcpy(yylval.end_node, yytext); return RTRN; }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
 #line 58 "grammar.l"
-{  yylval.node_type = strdup(yytext); return LOOP; }
+{  strcpy(yylval.end_node, yytext); return LOOP; }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
 #line 59 "grammar.l"
-{  yylval.node_type = strdup(yytext); return IF; }
+{  strcpy(yylval.end_node, yytext); return IF; }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
 #line 60 "grammar.l"
-{  yylval.node_type = strdup(yytext); return BYTE; }
+{  strcpy(yylval.end_node, yytext); return BYTE; }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
 #line 61 "grammar.l"
-{  yylval.node_type = strdup(yytext); return INT; }
+{  strcpy(yylval.end_node, yytext); return INT; }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
 #line 62 "grammar.l"
-{  yylval.node_type = strdup(yytext); return STRTYPE; }
+{  strcpy(yylval.end_node, yytext); return STRTYPE; }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
 #line 63 "grammar.l"
-{  yylval.node_type = strdup(yytext); return VOIDTYPE; }
+{  strcpy(yylval.end_node, yytext); return VOIDTYPE; }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
 #line 64 "grammar.l"
-{  yylval.node_type = strdup(yytext); return LISTTYPE; }
+{  strcpy(yylval.end_node, yytext); return LISTTYPE; }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
 #line 65 "grammar.l"
-{  yylval.node_type = strdup(yytext); return CAPACITY; }
+{  strcpy(yylval.end_node, yytext); return CAPACITY; }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
 #line 66 "grammar.l"
-{  yylval.node_type = strdup(yytext); return LEN; }
+{  strcpy(yylval.end_node, yytext); return LEN; }
 	YY_BREAK
 case 41:
 /* rule 41 can match eol */
 YY_RULE_SETUP
-#line 70 "grammar.l"
-{ input_line_no ++; }
+#line 69 "grammar.l"
+{ input_file_line_no ++; }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 73 "grammar.l"
+#line 70 "grammar.l"
 
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 75 "grammar.l"
-{
-    yylval.node_type = strdup(yytext);
-    return IDENT; }
+#line 72 "grammar.l"
+{  strcpy(yylval.end_node, yytext); return IDENT; }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 79 "grammar.l"
-{ 
-    yylval.node_type = strdup(yytext);
-    return NUMBER; }
+#line 75 "grammar.l"
+{  strcpy(yylval.end_node, yytext); return NUMBER; }
 	YY_BREAK
 /* read in strings */ 
 case 45:
+/* rule 45 can match eol */
 YY_RULE_SETUP
-#line 84 "grammar.l"
-{  
-    yylval.node_type = strdup(yytext);
-    return STR; }
+#line 78 "grammar.l"
+{   strcpy(yylval.end_node, yytext); return STR; }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 88 "grammar.l"
+#line 79 "grammar.l"
 ECHO;
 	YY_BREAK
-#line 1046 "lex.yy.c"
+#line 1041 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(COMMENTSTATE):
 	yyterminate();
@@ -2049,4 +2044,4 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 88 "grammar.l"
+#line 79 "grammar.l"
