@@ -19,9 +19,14 @@ struct symbolDataType {
 } symbol_table[50];
 int count_symbol_table = 0;
 
+struct function_name_type{
+    char *name;
+    char type[10];
+};
+
 struct functionDataType {
     char *data_type;
-    char array_datatype[20][10];
+    struct function_name_type *array_datatype[20];
     char *id_name;
 } function_table[50];
 int array_input_type_index = 0;
@@ -51,11 +56,11 @@ void printInorder(struct node *);
     char end_node[100];
 }
 
-%token <end_node> START_OF_FILE DEF IDENT
-%token  NUMBER STR REMLIST ADDLIST PLUS MINUS TIMES DIVIDE RCURL SEMICOL COMMA EQL NEQ LSS GTR LEQ GEQ CALL RTRN LOOP TO IF BYTE INT STRTYPE LPAREN RPAREN LBRACK RBRACK LCURL LISTTYPE VOIDTYPE ASSIGN CAPACITY LEN COMMENT MULTICOMMENT
+%token <end_node> START_OF_FILE DEF IDENT RTRN 
+%token  NUMBER STR REMLIST ADDLIST PLUS MINUS TIMES DIVIDE RCURL SEMICOL COMMA EQL NEQ LSS GTR LEQ GEQ CALL LOOP TO IF BYTE INT STRTYPE LPAREN RPAREN LBRACK RBRACK LCURL LISTTYPE VOIDTYPE ASSIGN CAPACITY LEN COMMENT MULTICOMMENT
 
-%type <obj_node> st program statement expression declarations flow_control change_var comment func_dec variable_dec function_block arg_func_type
-%type   function_inp arg_func func_dec return variable_dec range block step condition function_line function_call arg_val value 
+%type <obj_node> st program statement expression declarations flow_control change_var comment func_dec variable_dec function_block arg_func_type return function_line 
+%type   function_inp arg_func func_dec return variable_dec range block step condition function_call arg_val value 
 %type datatype comp
 
 %left IDENT
@@ -94,7 +99,7 @@ comment : COMMENT {}
         | MULTICOMMENT {} 
         ;
 
-change_var : IDENT ASSIGN expression
+change_var : IDENT ASSIGN expression { $$ = mknode($3, NULL, "change variable"); }
            ;
 
 func_dec : DEF { add('K', $1); } arg_func_type IDENT { add_func($4); } LPAREN function_inp RPAREN
@@ -109,31 +114,35 @@ function_inp : arg_func
              | 
              ;
 
-arg_func : arg_func_datatype IDENT 
+arg_func : arg_func_datatype IDENT
+         { 
+         strcpy(function_table[count_function_table].array_datatype[array_input_type_index]->type, type);
+         function_table[count_function_table].array_datatype[array_input_type_index]->name = strdup($2);
+         }
          ;
 
 
-arg_func_type : BYTE
-              | INT
-              | STR
-              | VOIDTYPE
+arg_func_datatype : BYTE { insert_type("byte"); }
+                  | INT { insert_type("int"); }
+                  | STRTYPE { insert_type("string"); }
+                  ;
+
+arg_func_type : BYTE { insert_type("byte"); }
+              | INT { insert_type("int"); }
+              | STR { insert_type("string"); }
+              | VOIDTYPE { insert_type("void"); }
               ;
 
-
-arg_func_datatype : BYTE 
-              | INT 
-              | STRTYPE 
-              ;
 
 function_block : function_line 
-               | function_block function_line 
+               | function_block function_line { $$ = mknode($1, $2, "function line"); }
                ;
 
 function_line : statement 
               | return 
               ;
 
-return : RTRN expression 
+return : RTRN expression { $$ = mknode($2, NULL, "return"); add('K', $1); }
        ;
 
 expression : expression PLUS expression
@@ -228,7 +237,7 @@ int main(void) {
     printf("_______________________________________\n\n");
     i=0;
     for(i=0; i<count_symbol_table; i++) {
-        printf("%s\t%s\t%s\t%d\t\n", symbol_table[i].id_name, symbol_table[i].data_type, symbol_table[i].type, symbol_table[i].line_number);
+        printf("%s\t%s\t%s\t\t%d\t\n", symbol_table[i].id_name, symbol_table[i].data_type, symbol_table[i].type, symbol_table[i].line_number);
     }
     printf("\n\n");
 
