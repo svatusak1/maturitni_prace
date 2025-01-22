@@ -40,8 +40,6 @@ letter             [A-Za-z]
 ">" {  strcpy(yylval.end_node, yytext); return GTR; }
 "<=" {  strcpy(yylval.end_node, yytext); return LEQ; }
 ">=" {  strcpy(yylval.end_node, yytext); return GEQ; }
-"--" {  strcpy(yylval.end_node, yytext); return REMLIST; }
-"++" {  strcpy(yylval.end_node, yytext); return ADDLIST; }
 "->" {  strcpy(yylval.end_node, yytext); return TO; }
 
 "(" {  strcpy(yylval.end_node, yytext); return LPAREN; }

@@ -5,13 +5,13 @@ func int add(int a, int b){
     
 }
 
-call add(10, 20, vcelky)
+call adition_function(10, 20, vcelky)
 
-func int add(int dobrman)
+func int adition_function(int dobrman)
 {
     int alk = dobrman + adolf
     3+44
-    return call print("halo")
+    return call print("nazdar")
     call simon_says(halo, halo)
     byte kokos = call add(1, 2, 3)
 
@@ -19,7 +19,7 @@ func int add(int dobrman)
     {
         int ahoj = i
     }
-    loop (byte i; 0 -> 10)
+    loop (byte k; 0 -> 10)
     {
         int krava = i
     }
