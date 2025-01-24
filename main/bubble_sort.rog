@@ -1,3 +1,4 @@
+start-ROG
 func int bubble_sort(list int seznam)
 {
 ##TODO  pridat boolean jestli se vubec nejake cislo presunulo - nutno vyskocit z loopu

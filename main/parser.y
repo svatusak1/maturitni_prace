@@ -11,7 +11,6 @@ FILE *out;
 
 char type[10];
 void add(char, char*);
-void add_func(char*);
 struct symbolDataType {
     char *data_type;
     char *id_name;
@@ -25,9 +24,12 @@ struct function_name_type{
     char arg_type[10];
 };
 
+char func_type[10];
+void add_func(char*);
 struct functionDataType {
     char data_type[10];
     struct function_name_type *input_datatypes[20];
+    int count_inp_datatypes;
     char *id_name;
 } function_table[50];
 int array_input_type_index = 0;
@@ -37,6 +39,7 @@ int count_function_table = 0;
 extern int input_file_line_no;
 
 void insert_type(char*);
+void insert_func_type(char*);
 
 struct node *mknode(struct node *left, struct node *right, char *token);
 
@@ -103,10 +106,13 @@ comment : COMMENT {}
 change_var : IDENT ASSIGN expression { $$ = mknode($3, NULL, $1); }
            ;
 
-func_dec : DEF { add('K', $1); } arg_func_type IDENT { add_func($4); } LPAREN function_inp RPAREN
+func_dec : DEF { add('K', $1); } arg_func_type IDENT LPAREN function_inp RPAREN
            LCURL function_block RCURL
          {
-         $$ = mknode($10, NULL, $4);
+         $$ = mknode($9, NULL, $4);
+         function_table[count_function_table].count_inp_datatypes = array_input_type_index;
+         array_input_type_index = 0;
+         add_func($4); 
          }
          ;
 
@@ -117,15 +123,17 @@ function_inp : arg_func
 
 arg_func : arg_func_datatype IDENT 
          {
+         printf("%d", count_function_table);
          function_table[count_function_table].input_datatypes[array_input_type_index] = (struct function_name_type *)malloc(sizeof(struct function_name_type));
          function_table[count_function_table].input_datatypes[array_input_type_index]->name = strdup($2);
          strcpy(function_table[count_function_table].input_datatypes[array_input_type_index]->arg_type, type);
+         array_input_type_index++;
          }
          ;
 
-arg_func_datatype : BYTE { insert_type("byte"); }
-                  | INT { insert_type("int"); }
-                  | STRTYPE { insert_type("string"); }
+arg_func_datatype : BYTE { insert_func_type("byte"); }
+                  | INT { insert_func_type("int"); }
+                  | STRTYPE { insert_func_type("string"); }
                   ;
 
 arg_func_type : BYTE { insert_type("byte"); }
@@ -142,7 +150,7 @@ function_line : statement
               | return 
               ;
 
-return : RTRN expression { $$ = mknode($2, NULL, "return"); add('K', $1); }
+return : RTRN { add('K', $1); } expression { $$ = mknode($3, NULL, "return"); }
        ;
 
 expression : expression PLUS expression { $$ = mknode($1, $3, $2); }
@@ -183,7 +191,7 @@ arg_val : expression
         ;
 
 
-variable_dec : datatype IDENT ASSIGN expression { $$ = mknode($4, NULL, $2); add('V', $2); } 
+variable_dec : datatype IDENT { add('V', $2); } ASSIGN expression { $$ = mknode($5, NULL, $2); } 
              ;
 
 datatype : BYTE { insert_type("byte"); }
@@ -192,12 +200,11 @@ datatype : BYTE { insert_type("byte"); }
          ;
 
 
-flow_control : LOOP LPAREN datatype IDENT { add('V', $4); } SEMICOL range RPAREN block
+flow_control : LOOP { add('K', $1); } LPAREN datatype IDENT { add('V', $5); } SEMICOL range RPAREN block
              {
-             add('K', $1);
-             $$ = mknode($7, $9, $4);
+             $$ = mknode($8, $10, $5);
              }
-             | IF LPAREN condition RPAREN block { add('K', $1); $$ = mknode($3, $5, "if statement"); }
+             | IF { add('K', $1); } LPAREN condition RPAREN block { $$ = mknode($4, $6, "if statement"); }
              ;
 
 range: expression TO expression { $$ = mknode($1, $3, $2); }
@@ -236,17 +243,17 @@ int main(void) {
 
     out = fopen("out.txt", "w");
 
+    int i = 0;
 
     fprintf(out, "\n\n");
     fprintf(out, "\nNAME   RET_DATATYPE   INP_DATATYPE \n");
     fprintf(out, "_______________________________________\n\n");
-    int i=0;
     for(i=0; i<count_function_table; i++) {
-        fprintf(out, "%s\t%s\t%s\t", function_table[i].id_name, function_table[i].data_type);
-        int a = 0;
-        while (function_table[i].input_datatypes[a]){
-            fprintf(out, "%s\t", function_table[i].input_datatypes[a]);
+        fprintf(out, "%s\t%s\t\t", function_table[i].id_name, function_table[i].data_type);
+        for (int a = 0; a < function_table[i].count_inp_datatypes; a++){
+            fprintf(out, "%s\t%s, ", function_table[i].input_datatypes[a]->arg_type, function_table[i].input_datatypes[a]->name);
         }
+        fprintf(out, "\n");
     }
     fprintf(out, "\n\n");
 
@@ -266,9 +273,16 @@ int main(void) {
 
 }
 
+void insert_func_type(char *type_to_insert){
+    int ret = snprintf(func_type, 10, "%s", type_to_insert);
+    if (ret < strlen(type)){
+        yyerror("error inserting type");
+    }
+}
+
 void insert_type(char *type_to_insert){
     int ret = snprintf(type, 10, "%s", type_to_insert);
-    if (ret < strlen(type)){
+    if (ret < strlen(func_type)){
         yyerror("error inserting type");
     }
 }
@@ -287,6 +301,9 @@ int search(char *id){
 void add(char c, char *id){
     
     int found = search(id);
+    if (c == 'K'){
+        found = 0;
+    }
 
     if (!found){
         symbol_table[count_symbol_table].id_name = strdup(id);
@@ -351,9 +368,10 @@ void add_func(char *name){
         yyerror("Multiple function declarations aren't allowed");
     }
 
-    function_table[count_function_table].id_name = strdup(name);
     strcpy(function_table[count_function_table].data_type, type);
+    function_table[count_function_table].id_name = strdup(name);
 
+    count_function_table++;
 }
 
 struct node *mknode(struct node *left, struct node *right, char *token){
