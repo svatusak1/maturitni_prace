@@ -1,0 +1,139 @@
+
+
+
+NAME   RET_DATATYPE   INP_DATATYPE 
+_______________________________________
+
+add	int		int	a, int	b, 
+adition_function	int		int	dobrman, 
+
+
+
+
+
+SYMBOL   DATATYPE   TYPE   LINE NUMBER 
+_______________________________________
+
+start-ROG	N/A	Keyword	1	
+func	N/A	Keyword	2	
+res	int	Variable	3	
+return	N/A	Keyword	4	
+call	N/A	Keyword	7	
+func	N/A	Keyword	9	
+alk	int	Variable	11	
+return	N/A	Keyword	13	
+call	N/A	Keyword	13	
+call	N/A	Keyword	14	
+kokos	byte	Variable	15	
+call	N/A	Keyword	15	
+loop	N/A	Keyword	17	
+i	byte	Variable	17	
+ahoj	int	Variable	19	
+loop	N/A	Keyword	21	
+k	byte	Variable	21	
+krava	int	Variable	23	
+if	N/A	Keyword	26	
+call	N/A	Keyword	27	
+return	N/A	Keyword	32	
+
+
+
+
+ Inorder traversal of the Parse Tree: 
+
+start
+statement
+statement
+statement
+function declaration
+adition_function
+function line
+function line
+function line
+function line
+function line
+function line
+function line
+function line
+variable declaration
+alk
++
+dobrman
+adolf
++
+3
+44
+return
+print
+"nazdar"
+simon_says
+function call argument
+halo
+halo
+variable declaration
+kokos
+add
+function call argument
+function call argument
+1
+2
+3
+flow control
+i
+->
+0
+step
+10
+1
+statement
+variable declaration
+ahoj
+i
+flow control
+k
+->
+0
+10
+statement
+variable declaration
+krava
+i
+flow control
+if statement
+>
+1
+10
+statement
+statement
+change variable
+ahoj
++
+doh
+*
+9
+total
+rozklovej
+statement
+variable declaration
+krava
+i
+return
+adolf
+adition_function
+function call argument
+function call argument
+10
+20
+vcelky
+function declaration
+add
+function line
+variable declaration
+res
++
+a
+b
+return
+res
+
+
