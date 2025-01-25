@@ -123,7 +123,6 @@ function_inp : arg_func
 
 arg_func : arg_func_datatype IDENT 
          {
-         printf("%d", count_function_table);
          function_table[count_function_table].input_datatypes[array_input_type_index] = (struct function_name_type *)malloc(sizeof(struct function_name_type));
          function_table[count_function_table].input_datatypes[array_input_type_index]->name = strdup($2);
          strcpy(function_table[count_function_table].input_datatypes[array_input_type_index]->arg_type, type);
