@@ -1,9 +1,10 @@
 start-ROG
 func int add(int a, int b){
-    int res = a + b
+    int res = a + b * 4 / 5
     return res
 }
 
+str ubrousek = "city"
 call adition_function(10, 20, vcelky)
 
 func int adition_function(int dobrman)
