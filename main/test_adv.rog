@@ -1,0 +1,38 @@
+start-ROG
+func str 32 add(int a, int b, str 32 hola){
+    int res = (a + b) * 4 / 5
+    return res
+}
+
+str 4 ubrousek = "city"
+
+func int adition_function(int dobrman)
+{
+    int alk = dobrman + adolf
+    3+44
+    str 10 pozdrav = "no nazdar"
+    
+    call print(pozdrav)
+    return pozdrav
+    call simon_says(zdravim, balo)
+    byte kokos = call add(1, 2, 3)
+
+    loop (byte i; 0 -> 10; 1)
+    {
+        int ahoj = i
+    }
+    loop (byte k; 0 -> 10)
+    {
+        krakonos = i + 1
+        call print(k)
+    }
+
+    if ( 1 > 10){
+        call rozklovej()
+        ahoj = doh + 9 * total
+    }
+
+
+    return adolf + k
+}
+call adition_function(10, 20, vcelky)

@@ -54,11 +54,11 @@ letter             [A-Za-z]
 "return" { return RTRN; }
 "loop" { return LOOP; }
 "if" { return IF; }
-"byte" { yylval.type = strdup(yytext); return BYTE; }
-"int" { yylval.type = strdup(yytext); return INT; }
-"str" { yylval.type = strdup(yytext); return STRTYPE; }
-"void" { yylval.type = strdup(yytext); return VOIDTYPE; }
-"list" { yylval.type = strdup(yytext); return LISTTYPE; }
+"byte" { yylval.id = strdup(yytext); return BYTE; }
+"int" { yylval.id = strdup(yytext); return INT; }
+"str" { yylval.id = strdup(yytext); return STRTYPE; }
+"void" { yylval.id = strdup(yytext); return VOIDTYPE; }
+"list" { yylval.id = strdup(yytext); return LISTTYPE; }
 "capacity" { return CAPACITY; }
 "len" { return LEN; }
 
@@ -70,7 +70,7 @@ whitespace
 {letter}({letter}|"_"|{digit})* { yylval.id = strdup(yytext); return IDENT; }
 
 
-"-"?{digit}+ { yylval.number = strdup(yytext); return NUMBER; }
+"-"?{digit}+ { yylval.id = strdup(yytext); return NUMBER; }
 
     /* read in strings */ 
-\"[^"]*\" { yylval.string = strdup(yytext); return STR; }
+\"[^"]*\" { yylval.id = strdup(yytext); return STR; }
