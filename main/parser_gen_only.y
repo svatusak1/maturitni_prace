@@ -67,7 +67,7 @@ int search(char*);
 
 %%
 
-st : START_OF_FILE { add('K', "file_begin"); fprintf(out, "source_filename = \"Module\" \ntarget triple = \"x86_64-w64-mingw32\"\n"); } program
+st : START_OF_FILE { add('K', "file_begin"); fprintf(out, "source_filename = \"Module\" \ntarget triple = \"x86_64-w64-mingw32\"\n\n"); } program
 	;
 
 program : statement program 
@@ -88,8 +88,7 @@ declarations : func_dec
 	;
 
 
-string_dec : STRTYPE IDENT ASSIGN STR { fprintf(temp_out, "%%%s = alloca [%d x i8]\nstore [%d x i8] c%s, ptr %%%s\n", $2, strlen($4)-2, strlen($4)-2, $4, $2); }
-           // makeString($2, strlen($4)-2, $4);
+string_dec : STRTYPE IDENT ASSIGN STR { makeString($2, strlen($4)-2, $4); }
 
 comment : COMMENT
 	| MULTICOMMENT 
@@ -190,7 +189,7 @@ flow_control : LOOP { add('K', "loop"); } LPAREN datatype IDENT SEMICOL range RP
     fprintf(temp_out, "br i1 %%condition%d, label %%if%d, label %%continue%d\nif%d:\n", ifCounter, ifCounter, ifCounter, ifCounter);
     }
     block
-    { fprintf(temp_out, "br label %%continue%d\ncontinue%d:\n", ifCounter, ifCounter); 
+    { fprintf(temp_out, "br i1 1, label %%continue%d, label %%entry\ncontinue%d:\n", ifCounter, ifCounter); 
     ifCounter ++;
     }
     ;
