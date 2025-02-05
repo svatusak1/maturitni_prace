@@ -3,7 +3,8 @@ start-ROG
 str ubrousek = "city"
 
 func int print(int o){
-    int l = 10
+    byte l = 10
+    l = l + 5
     if (l > 20){
         int k = 34
     }

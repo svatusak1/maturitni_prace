@@ -199,7 +199,7 @@ datatype : BYTE { insert_type("byte"); }
          ;
 
 
-flow_control : LOOP { add('K', $1); } LPAREN datatype IDENT { add('V', $5); } SEMICOL range RPAREN block
+flow_control : LOOP { add('K', $1); } LPAREN datatype IDENT SEMICOL range RPAREN block
              {
              $$ = mknode($8, $10, $5);
              }
@@ -281,7 +281,7 @@ void insert_func_type(char *type_to_insert){
 
 void insert_type(char *type_to_insert){
     int ret = snprintf(type, 10, "%s", type_to_insert);
-    if (ret < strlen(func_type)){
+    if (ret < strlen(type)){
         yyerror("error inserting type");
     }
 }
