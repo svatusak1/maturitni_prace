@@ -6,7 +6,7 @@ func int print(int o){
     byte l = 10
     l = l + 5
     if (l > 20){
-        int k = 34
+        int p = 34
     }
     return o
 }
@@ -21,3 +21,8 @@ if (i < 10){
     str kola = "kokos"
 }
 int ahoj = 10
+int a = 0
+
+loop (int k; 0->5){
+    a = a+k
+}

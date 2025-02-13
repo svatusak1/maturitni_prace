@@ -1,19 +1,26 @@
 start-ROG
-func str 32 add(int a, int b, str 32 hola){
+func int add(int a, int b){
     int res = (a + b) * 4 / 5
     return res
 }
 
-str 4 ubrousek = "city"
+str ubrousek = "city"
+int adolf = 55
+
+func int simon_says(int r, int t){
+    return r
+}
 
 func int adition_function(int dobrman)
 {
     int alk = dobrman + adolf
     3+44
-    str 10 pozdrav = "no nazdar"
+    str pozdrav = "no nazdar"
     
     call print(pozdrav)
     return pozdrav
+    int zdravim = 0
+    byte balo = 10
     call simon_says(zdravim, balo)
     byte kokos = call add(1, 2, 3)
 
