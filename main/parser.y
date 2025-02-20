@@ -4,6 +4,19 @@
 #include <string.h>
 #include <ctype.h>
 
+int print_value = 1;
+int arg_len = 0;
+
+struct arg_val_node{
+    struct arg_val_node *next;
+    char *id;
+    char *type;
+};
+
+struct arg_val_node *argval_head;
+
+struct arg_val_node *mk_arg_node(char *id, struct arg_val_node *);
+
 
 int yylex(void);
 int yyerror(const char *);
@@ -45,7 +58,7 @@ char type[10];
 void add(char, char*);
 struct symbolDataType {
     char *data_type;
-    char *id_name;
+    char *id;
     char *symbol_type;
     int line_number;
 } symbol_table[50];
@@ -59,13 +72,15 @@ int search(char*);
 
 %union{
     char *id;
+    struct arg_val_node *argument_node;
 }
 
 %token START_OF_FILE REMLIST ADDLIST PLUS MINUS TIMES DIVIDE RCURL SEMICOL COMMA EQL NEQ LSS GTR LEQ GEQ CALL DEF RTRN LOOP TO IF LPAREN RPAREN LBRACK RBRACK LCURL LISTTYPE VOIDTYPE ASSIGN CAPACITY LEN COMMENT MULTICOMMENT
 %token <id> IDENT NUMBER STR BYTE INT STRTYPE VOID
 
-%type st program statement declarations func_dec variable_dec change_val comment flow_control range block step condition function_call function_line function_block arg_val function_inp arg_func arg_func_datatype return 
-%type <id> exp expression datatype value func_datatype comp 
+%type st program statement declarations func_dec variable_dec change_val comment flow_control range block step condition function_line function_block function_inp arg_func arg_func_datatype return 
+%type <id> expression datatype value func_datatype comp function_call
+%type <argument_node> arg_val 
 
 %left IDENT
 %right LBRACK
@@ -87,7 +102,7 @@ program : statement program
 	;
 
 statement : declarations
-	| exp
+	| expression
 	| flow_control 
 	| change_val
 	| comment 
@@ -118,7 +133,7 @@ comment : COMMENT
 
 change_val : IDENT ASSIGN {
            insert_type(symbol_table[search($1)].data_type);
-           } exp {
+           } expression {
            fprintf(temp_out, "store %s %s, ptr %%%s0\n", type, $4, $1);
            }
            ;
@@ -183,9 +198,6 @@ return : RTRN expression { add('K', "return");
        fprintf(temp_out, "ret %s %s", func_ret_type, $2); }
 	;
 
-exp : expression
-    | function_call { }
-    ;
 
 expression : expression PLUS expression
            {
@@ -196,11 +208,12 @@ expression : expression PLUS expression
 	| expression DIVIDE expression { $$ = newTemp(); fprintf(temp_out, "%s = udiv %s %s, %s\n", $$, type, $1, $3); }
 	| LPAREN expression RPAREN { $$ = $2; }
     | value
+   | function_call
 	;
 
 value : IDENT { $$ = (char*)malloc(sizeof(char) * (strlen(yylval.id)+2)); snprintf($$, strlen(yylval.id)+1+1, "%%%s", yylval.id);
       int index = search($1);
-      if (index){
+      if (index && print_value){
           fprintf(temp_out, "%%%s = load %s, ptr %%%s0\n", $1, symbol_table[index].data_type, $1, $1);
       }
       }
@@ -215,21 +228,47 @@ function_call : CALL IDENT
               char *func_ret_type;
               if (index >=0){
                   func_ret_type = symbol_table[index].data_type; 
-                  fprintf(temp_out, "call %s @%s(", func_ret_type, $2);
               }
-              fprintf(temp_out, ")\n");
+              if (!func_ret_type){
+                    yyerror("variable not declared");
+                }
+              $$ = (char*)malloc((8+strlen(func_ret_type)+strlen($2)+1+arg_len+1+1)*sizeof(char));
+              int number = snprintf($$, 8+strlen(func_ret_type)+strlen($2)+1, "call %s @%s(", func_ret_type, $2);
+              printf("%s, ", $$);
+              struct arg_val_node *travers_node = $4;
+
+            while (travers_node->next){
+
+            snprintf($$, strlen(travers_node->type)+strlen(travers_node->id)+3+1, "%s %s, ", travers_node->type, travers_node->id);
+              printf("%d, ", number);
+                                travers_node = travers_node->next;
+
+            }
+
+              printf("%s, ", $$);
+            snprintf($$, 3+strlen(travers_node->type)+strlen(travers_node->id), "%s %s)\n", travers_node->type, travers_node->id);
+            arg_len = 0;
               }
+
 	| CALL CAPACITY LPAREN arg_val RPAREN { add('K', "capacity-func"); }
 	| CALL LEN LPAREN arg_val RPAREN { add('K', "len-func"); }
 	;
 
-arg_val : expression { fprintf(temp_out, "var_type %s", $1); }
-	| arg_val COMMA expression { fprintf(temp_out, ", var_type %s", $3); }
-	| { }
-	;
+arg_val : expression
+        {
+        $$ = mk_arg_node($1, NULL);
+        arg_len++;
+        }
+        | arg_val COMMA expression
+        {
+        $$ = mk_arg_node($3, $1);
+        arg_len++;
+        }
+        | { }
+        ;
 
 
-variable_dec : datatype IDENT ASSIGN exp {
+variable_dec : datatype IDENT ASSIGN expression {
              add('V', $2);
             fprintf(temp_out, "%%%s0 = alloca %s\n", $2, $1);
             fprintf(temp_out, "store %s %s, ptr %%%s0\n", $1, $4, $2);
@@ -267,9 +306,16 @@ flow_control : LOOP {
              fprintf(temp_out, "continue_loop%d:\n", loopCounter);
              loopCounter++;
              }
-	| IF LPAREN { add('K', "if"); fprintf(temp_out, "\n"); } condition RPAREN
+	| IF LPAREN
+    {
+    print_value = 0;
+    add('K', "if");
+    fprintf(temp_out, "\n");
+    }
+    condition RPAREN
     {
     fprintf(temp_out, "br i1 %%condition%d, label %%if%d, label %%continue_if%d\nif%d:\n", ifCounter, ifCounter, ifCounter, ifCounter);
+    print_value = 1;
     }
     block
     { fprintf(temp_out, "br label %%continue_if%d\ncontinue_if%d:\n\n", ifCounter, ifCounter); 
@@ -286,7 +332,7 @@ step : expression
 
 condition : expression comp expression
           {
-          fprintf(temp_out, "%%c1%d = load i32, ptr %s0\n %%condition%d = icmp %s i32 %%c1%d, %s\n", ifCounter, $1, ifCounter, $2, ifCounter, $3);
+          fprintf(temp_out, "%%c%d = load i32, ptr %s0\n %%condition%d = icmp %s i32 %%c%d, %s\n", ifCounter, $1, ifCounter, $2, ifCounter, $3);
           }
           //todo load if variable else not 
 	;
@@ -315,7 +361,7 @@ int yywrap(){
 
 int main(void) {
     FILE *fp;
-    fp = fopen("test_adv.rog","r");
+    fp = fopen("test.rog","r");
     yyin = fp;
     out = fopen("out.ll", "w");
     temp_out = fopen("temp_llvm.ll", "w");
@@ -345,7 +391,7 @@ int main(void) {
     printf("__________________________________________________\n\n");
     int i;
     for(i=0; i<count_symbol_table; i++) {
-        printf("%s\t%s\t%s \t%d\n", symbol_table[i].id_name, symbol_table[i].data_type, symbol_table[i].symbol_type, symbol_table[i].line_number);
+        printf("%s\t%s\t%s \t%d\n", symbol_table[i].id, symbol_table[i].data_type, symbol_table[i].symbol_type, symbol_table[i].line_number);
     }
     printf("\n\n");
 
@@ -375,7 +421,7 @@ void add(char c, char *id){
     }
 
     if (found == -1){
-        symbol_table[count_symbol_table].id_name = strdup(id);
+        symbol_table[count_symbol_table].id = strdup(id);
         symbol_table[count_symbol_table].line_number = input_file_line_no;
         switch (c){
         /*
@@ -427,11 +473,28 @@ void add(char c, char *id){
 int search(char *id){
     int i;
     for (i = count_symbol_table-1; i>= 0; i--){
-        if (strcmp(symbol_table[i].id_name, id) == 0){
+        if (strcmp(symbol_table[i].id, id) == 0){
             return i;
         }
     }
     return -1;
 }
 
+struct arg_val_node *mk_arg_node(char *id, struct arg_val_node *next){
 
+    struct arg_val_node *node = (struct arg_val_node*)malloc(sizeof(struct arg_val_node));
+    node->id = id;
+    node->next = next;
+    if (isdigit(id[0])){
+        if (strlen(id) > 2^(8*8)){
+            node->type = "i32";
+        } else{
+           node->type = "i8"; 
+        }
+    } else{
+        int index = search(id);
+        node->type = symbol_table[index].data_type;
+    }
+    return node;
+
+}

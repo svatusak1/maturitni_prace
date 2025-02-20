@@ -8,7 +8,7 @@ func int print(int o){
     if (l > 20){
         int p = 34
     }
-    return o
+    return call print(12)
 }
 
 int i = 9 * 9
@@ -26,3 +26,4 @@ int a = 0
 loop (int k; 0->5){
     a = a+k
 }
+int valeim = call print(9, 10, 11)
