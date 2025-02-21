@@ -4,19 +4,8 @@
 #include <string.h>
 #include <ctype.h>
 
-int print_value = 1;
+int should_print = 1;
 int arg_len = 0;
-
-struct arg_val_node{
-    struct arg_val_node *next;
-    char *id;
-    char *type;
-};
-
-struct arg_val_node *argval_head;
-
-struct arg_val_node *mk_arg_node(char *id, struct arg_val_node *);
-
 
 int yylex(void);
 int yyerror(const char *);
@@ -61,26 +50,45 @@ struct symbolDataType {
     char *id;
     char *symbol_type;
     int line_number;
-} symbol_table[50];
+    int version;
+} symbol_table[1024];
 int count_symbol_table = 0;
 
 void insert_type(char*);
 
 int search(char*);
 
+
+struct arg_node {
+    char *id;
+    char *type;
+    struct arg_node *next;
+};
+
+struct functionDataType {
+    char *data_type;
+    char *id;
+    int line_number;
+    struct arg_node node;
+
+} function_table[50];
+int count_function_table = 0;
+
+
 %}
 
 %union{
     char *id;
-    struct arg_val_node *argument_node;
+    char arguments[1024];
 }
 
-%token START_OF_FILE REMLIST ADDLIST PLUS MINUS TIMES DIVIDE RCURL SEMICOL COMMA EQL NEQ LSS GTR LEQ GEQ CALL DEF RTRN LOOP TO IF LPAREN RPAREN LBRACK RBRACK LCURL LISTTYPE VOIDTYPE ASSIGN CAPACITY LEN COMMENT MULTICOMMENT
-%token <id> IDENT NUMBER STR BYTE INT STRTYPE VOID
+%token START_OF_FILE REMLIST ADDLIST PLUS MINUS TIMES DIVIDE RCURL SEMICOL COMMA EQL NEQ LSS GTR LEQ GEQ CALL DEF RTRN LOOP TO IF LPAREN RPAREN LBRACK RBRACK LCURL LISTTYPE ASSIGN CAPACITY LEN COMMENT MULTICOMMENT
+%token <id> IDENT NUMBER STR BYTE INT STRTYPE
 
 %type st program statement declarations func_dec variable_dec change_val comment flow_control range block step condition function_line function_block function_inp arg_func arg_func_datatype return 
-%type <id> expression datatype value func_datatype comp function_call
-%type <argument_node> arg_val 
+%type <id> expression datatype value func_datatype comp function_call step
+%type <arguments> arg_val
+
 
 %left IDENT
 %right LBRACK
@@ -142,6 +150,7 @@ func_dec : DEF
          {
          add('K', "def");
          temp_hold = temp_out; temp_out = out; fprintf(temp_out, "\ndefine ");
+         //TODO add to function table
          }
          func_datatype
          {
@@ -175,8 +184,6 @@ arg_func : arg_func_datatype IDENT {
 func_datatype : BYTE { $$ = "i8"; insert_type($$); }
 	| INT { $$ = "i32"; insert_type($$); }
     //  TODO string type
-//	| STRTYPE { $$ = ""; }
-	| VOIDTYPE { $$ = "void"; }
 	;
 
 
@@ -208,16 +215,27 @@ expression : expression PLUS expression
 	| expression DIVIDE expression { $$ = newTemp(); fprintf(temp_out, "%s = udiv %s %s, %s\n", $$, type, $1, $3); }
 	| LPAREN expression RPAREN { $$ = $2; }
     | value
-   | function_call
 	;
 
-value : IDENT { $$ = (char*)malloc(sizeof(char) * (strlen(yylval.id)+2)); snprintf($$, strlen(yylval.id)+1+1, "%%%s", yylval.id);
+value : IDENT
+      {
       int index = search($1);
-      if (index && print_value){
-          fprintf(temp_out, "%%%s = load %s, ptr %%%s0\n", $1, symbol_table[index].data_type, $1, $1);
+      if ( index < 0){
+        char msg [1024];
+        snprintf(msg, 18+1+strlen($1), "unknown variable- %s", $1);
+        yyerror(msg);
+        }
+      char version[512];
+      itoa(symbol_table[index].version, version, 10);
+      $$ = (char*)malloc(sizeof(char) * (strlen(yylval.id)+ 1 + strlen(version) + 1));
+      snprintf($$, 1+strlen(yylval.id)+1+strlen(version)+1, "%%%s.%s", yylval.id, version);
+      if (should_print){
+          fprintf(temp_out, "%%%s.%d = load %s, ptr %%%s0\n", $1, symbol_table[index].version, symbol_table[index].data_type, $1, $1);
       }
+      symbol_table[index].version++;
       }
 	| NUMBER { $$ = yylval.id; }
+      | function_call { $$ = newTemp(); fprintf(temp_out, "%s = %s\n", $$, $1); }
 	;
 
 function_call : CALL IDENT
@@ -232,22 +250,8 @@ function_call : CALL IDENT
               if (!func_ret_type){
                     yyerror("variable not declared");
                 }
-              $$ = (char*)malloc((8+strlen(func_ret_type)+strlen($2)+1+arg_len+1+1)*sizeof(char));
-              int number = snprintf($$, 8+strlen(func_ret_type)+strlen($2)+1, "call %s @%s(", func_ret_type, $2);
-              printf("%s, ", $$);
-              struct arg_val_node *travers_node = $4;
-
-            while (travers_node->next){
-
-            snprintf($$, strlen(travers_node->type)+strlen(travers_node->id)+3+1, "%s %s, ", travers_node->type, travers_node->id);
-              printf("%d, ", number);
-                                travers_node = travers_node->next;
-
-            }
-
-              printf("%s, ", $$);
-            snprintf($$, 3+strlen(travers_node->type)+strlen(travers_node->id), "%s %s)\n", travers_node->type, travers_node->id);
-            arg_len = 0;
+              $$ = (char*)malloc((5+strlen(func_ret_type)+2+strlen($2)+1+strlen($4)+1+1)*sizeof(char));
+              snprintf($$, 5+strlen(func_ret_type)+2+strlen($2)+1+strlen($4)+1+1, "call %s @%s(%s)", func_ret_type, $2, $4);
               }
 
 	| CALL CAPACITY LPAREN arg_val RPAREN { add('K', "capacity-func"); }
@@ -256,13 +260,42 @@ function_call : CALL IDENT
 
 arg_val : expression
         {
-        $$ = mk_arg_node($1, NULL);
-        arg_len++;
+        if (isdigit($1[0])){
+            // TODO make it as the function requires
+            insert_type("i32");
+        } else{
+            int index = search($1+1);
+            if (index < 0){
+                yyerror("unknown variable");
+            }
+            insert_type(symbol_table[index].data_type);
+        }
+        snprintf($$, strlen($1)+strlen(type)+2, "%s %s", type, $1);
+        arg_len = strlen($1)+strlen(type)+1;
         }
         | arg_val COMMA expression
         {
-        $$ = mk_arg_node($3, $1);
-        arg_len++;
+        if (isdigit($3[0])){
+            // TODO make it as the function requires
+            insert_type("i32");
+        } else{
+            int i = 0;
+            while (i < strlen($3)){
+                if ('.' == $3[i]){
+                    $3[i] = '\0';
+                    break;
+                }
+                i++;
+            }
+            int index = search($3+1);
+            $3[i] = '.';
+            if (index < 0){
+                yyerror("unknown variable");
+            }
+            insert_type(symbol_table[index].data_type);
+        }
+        snprintf($$ + arg_len, strlen($3)+strlen(type)+4, ", %s %s", type, $3);
+        arg_len += strlen($3)+strlen(type)+3;
         }
         | { }
         ;
@@ -308,14 +341,14 @@ flow_control : LOOP {
              }
 	| IF LPAREN
     {
-    print_value = 0;
+    should_print = 0;
     add('K', "if");
     fprintf(temp_out, "\n");
     }
     condition RPAREN
     {
     fprintf(temp_out, "br i1 %%condition%d, label %%if%d, label %%continue_if%d\nif%d:\n", ifCounter, ifCounter, ifCounter, ifCounter);
-    print_value = 1;
+    should_print = 1;
     }
     block
     { fprintf(temp_out, "br label %%continue_if%d\ncontinue_if%d:\n\n", ifCounter, ifCounter); 
@@ -324,7 +357,7 @@ flow_control : LOOP {
     ;
 
 range: expression TO expression { range.start = $1; range.end = $3; }
-	| expression TO expression SEMICOL step 
+	| expression TO expression SEMICOL step { range.start = $1; range.end = $3; range.step = $5; }
 	;
 
 step : expression 
@@ -332,7 +365,25 @@ step : expression
 
 condition : expression comp expression
           {
-          fprintf(temp_out, "%%c%d = load i32, ptr %s0\n %%condition%d = icmp %s i32 %%c%d, %s\n", ifCounter, $1, ifCounter, $2, ifCounter, $3);
+            int i = 0;
+            while (i < strlen($1)){
+                if ('.' == $1[i]){
+                    $1[i] = '\0';
+                    break;
+                }
+                i++;
+            }
+
+            i = 0;
+            while (i < strlen($3)){
+                if ('.' == $3[i]){
+                    $3[i] = '\0';
+                    break;
+                }
+                i++;
+            }
+          fprintf(temp_out, "%%c%d = load i32, ptr %s0\n", ifCounter, $1);
+          fprintf(temp_out, "%%condition%d = icmp %s i32 %%c%d, %s\n", ifCounter, $2, ifCounter, $3);
           }
           //todo load if variable else not 
 	;
@@ -423,6 +474,7 @@ void add(char c, char *id){
     if (found == -1){
         symbol_table[count_symbol_table].id = strdup(id);
         symbol_table[count_symbol_table].line_number = input_file_line_no;
+        symbol_table[count_symbol_table].version = 0;
         switch (c){
         /*
         K keyword
@@ -478,23 +530,4 @@ int search(char *id){
         }
     }
     return -1;
-}
-
-struct arg_val_node *mk_arg_node(char *id, struct arg_val_node *next){
-
-    struct arg_val_node *node = (struct arg_val_node*)malloc(sizeof(struct arg_val_node));
-    node->id = id;
-    node->next = next;
-    if (isdigit(id[0])){
-        if (strlen(id) > 2^(8*8)){
-            node->type = "i32";
-        } else{
-           node->type = "i8"; 
-        }
-    } else{
-        int index = search(id);
-        node->type = symbol_table[index].data_type;
-    }
-    return node;
-
 }

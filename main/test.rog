@@ -3,7 +3,7 @@ start-ROG
 str ubrousek = "city"
 
 func int print(int o){
-    byte l = 10
+    byte l = o
     l = l + 5
     if (l > 20){
         int p = 34
@@ -22,8 +22,9 @@ if (i < 10){
 }
 int ahoj = 10
 int a = 0
+call print(45)
 
 loop (int k; 0->5){
     a = a+k
 }
-int valeim = call print(9, 10, 11)
+int valeim = call print(9, a, 11)
