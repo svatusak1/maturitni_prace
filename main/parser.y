@@ -61,33 +61,38 @@ int search(char*);
 
 struct arg_node {
     char *id;
-    char *type;
+    char *data_type;
     struct arg_node *next;
 };
 
 struct functionDataType {
+
     char *data_type;
     char *id;
     int line_number;
-    struct arg_node node;
+    struct arg_node *head;
 
 } function_table[50];
 int count_function_table = 0;
 
+struct arg_node *current_arg_node;
 
+int func_search(char *);
 %}
 
 %union{
     char *id;
     char arguments[1024];
+    struct arg_node *input_node;
 }
 
 %token START_OF_FILE REMLIST ADDLIST PLUS MINUS TIMES DIVIDE RCURL SEMICOL COMMA EQL NEQ LSS GTR LEQ GEQ CALL DEF RTRN LOOP TO IF LPAREN RPAREN LBRACK RBRACK LCURL LISTTYPE ASSIGN CAPACITY LEN COMMENT MULTICOMMENT
 %token <id> IDENT NUMBER STR BYTE INT STRTYPE
 
-%type st program statement declarations func_dec variable_dec change_val comment flow_control range block step condition function_line function_block function_inp arg_func arg_func_datatype return 
+%type st program statement declarations func_dec variable_dec change_val comment flow_control range block step condition function_line function_block arg_func_datatype return 
 %type <id> expression datatype value func_datatype comp function_call step
 %type <arguments> arg_val
+%type <input_node> func_inp arg_func
 
 
 %left IDENT
@@ -151,6 +156,7 @@ func_dec : DEF
          add('K', "def");
          temp_hold = temp_out; temp_out = out; fprintf(temp_out, "\ndefine ");
          //TODO add to function table
+         function_table[count_function_table].line_number = input_file_line_no;
          }
          func_datatype
          {
@@ -159,24 +165,39 @@ func_dec : DEF
          }
          IDENT LPAREN
          {
+         function_table[count_function_table].id = $5;
          fprintf(temp_out, " @%s(", $5);
          add('F', $5);
          }
-         function_inp RPAREN
+         func_inp RPAREN
          {
          fprintf(temp_out, "){\nentry:\n");
+         function_table[count_function_table].id = $5;
+         function_table[count_function_table].data_type = $3;
+         function_table[count_function_table].head = $8;
+         count_function_table++;
          }
          LCURL function_block RCURL { fprintf(temp_out, "}\n\n"); temp_out = temp_hold; }
          ;
 
-function_inp : arg_func
-	| arg_func COMMA { fprintf(temp_out, ", "); } function_inp
+func_inp : arg_func
+             // TODO add to func table
+	| func_inp COMMA arg_func
+    {
+    fprintf(temp_out, ", ");
+    $1->next = $3;
+    $$ = $1;
+    }
 	| { }
 	;
 
 arg_func : arg_func_datatype IDENT { 
         fprintf(temp_out, " %%%s0", $2);
         add('I', $2);
+         $$ = (struct arg_node*)malloc(sizeof(struct arg_node));
+         $$->id = $2;
+         $$->data_type = type;
+         $$->next = NULL;
         }
         ;
 
@@ -187,8 +208,8 @@ func_datatype : BYTE { $$ = "i8"; insert_type($$); }
 	;
 
 
-arg_func_datatype : BYTE { fprintf(temp_out, "ptr"); }
-	| INT { fprintf(temp_out, "ptr"); }
+arg_func_datatype : BYTE { insert_type("i8"); fprintf(temp_out, "ptr"); }
+	| INT { insert_type("i32"); fprintf(temp_out, "ptr"); }
 //	| STRTYPE NUMBER { fprintf(temp_out, "[i8 x %d]", atoi($2)); }
 // TODO function input also strings
 	;
@@ -239,7 +260,11 @@ value : IDENT
 	;
 
 function_call : CALL IDENT
-              LPAREN arg_val RPAREN 
+              LPAREN
+              {
+              current_arg_node = function_table[func_search($2)].head;
+              }
+              arg_val RPAREN 
               {
               add('K', "call");
               int index = search($2);
@@ -250,8 +275,8 @@ function_call : CALL IDENT
               if (!func_ret_type){
                     yyerror("variable not declared");
                 }
-              $$ = (char*)malloc((5+strlen(func_ret_type)+2+strlen($2)+1+strlen($4)+1+1)*sizeof(char));
-              snprintf($$, 5+strlen(func_ret_type)+2+strlen($2)+1+strlen($4)+1+1, "call %s @%s(%s)", func_ret_type, $2, $4);
+              $$ = (char*)malloc((5+strlen(func_ret_type)+2+strlen($2)+1+strlen($5)+1+1)*sizeof(char));
+              snprintf($$, 5+strlen(func_ret_type)+2+strlen($2)+1+strlen($5)+1+1, "call %s @%s(%s)", func_ret_type, $2, $5);
               }
 
 	| CALL CAPACITY LPAREN arg_val RPAREN { add('K', "capacity-func"); }
@@ -260,9 +285,9 @@ function_call : CALL IDENT
 
 arg_val : expression
         {
+        printf("\n%p\n", current_arg_node->next);
         if (isdigit($1[0])){
-            // TODO make it as the function requires
-            insert_type("i32");
+            insert_type(current_arg_node->data_type);
         } else{
             int index = search($1+1);
             if (index < 0){
@@ -272,12 +297,15 @@ arg_val : expression
         }
         snprintf($$, strlen($1)+strlen(type)+2, "%s %s", type, $1);
         arg_len = strlen($1)+strlen(type)+1;
+        current_arg_node = current_arg_node->next;
         }
         | arg_val COMMA expression
         {
-        if (isdigit($3[0])){
-            // TODO make it as the function requires
-            insert_type("i32");
+        printf("\n%d\n", (current_arg_node == NULL));
+        if (current_arg_node == NULL){
+            yyerror("too many variables");
+        } else if (isdigit($3[0])){
+            insert_type(current_arg_node->data_type);
         } else{
             int i = 0;
             while (i < strlen($3)){
@@ -447,6 +475,20 @@ int main(void) {
     printf("\n\n");
 
 
+    printf("\n\n");
+    printf("\nNAME || RETURN_TYPE || ARGUMENTS || LINE NUMBER\n");
+    printf("__________________________________________________\n\n");
+    for(i=0; i<count_function_table; i++) {
+        printf("%s\t%s\t", function_table[i].id, function_table[i].data_type);
+        struct arg_node *node = function_table[i].head;
+        while(node){
+            printf("%s %s, ", node->data_type, node->id);
+            node = node->next;
+        }
+        printf("%d\n", function_table[i].line_number);
+    }
+    printf("\n\n");
+
 }
 
 void makeString(char *ident, int size, char *str){
@@ -526,6 +568,17 @@ int search(char *id){
     int i;
     for (i = count_symbol_table-1; i>= 0; i--){
         if (strcmp(symbol_table[i].id, id) == 0){
+            return i;
+        }
+    }
+    return -1;
+}
+
+
+int func_search(char *id){
+    int i;
+    for (i = count_function_table-1; i>= 0; i--){
+        if (strcmp(function_table[i].id, id) == 0){
             return i;
         }
     }

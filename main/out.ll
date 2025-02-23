@@ -3,7 +3,7 @@ target triple = "x86_64-w64-mingw32"
 
 define i32 @print(ptr %o0){
 entry:
-%o.0 = load i32, ptr %o0
+%o.0 = load i8, ptr %o0
 %l0 = alloca i8
 store i8 %o.0, ptr %l0
 %l.0 = load i8, ptr %l0
@@ -74,8 +74,7 @@ loop0:
 store i32 %t4, ptr %a0
 br label %loop_start0
 continue_loop0:
-%a.1 = load i32, ptr %a0
-%t5 = call i32 @print(i32 9, i32 %a.1, i32 11)
+%t5 = call i32 @print(i32 9)
 %valeim0 = alloca i32
 store i32 %t5, ptr %valeim0
 ret i32 0
