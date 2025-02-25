@@ -51,6 +51,7 @@ right now cannot actualy be used for anything more or less :)
     capacity() is used to determine the length of a list
     len() is used to get number of elements in list and the length of a string
 }
+
 ------------------------------------------------------------------------------
 OPERATORS
 

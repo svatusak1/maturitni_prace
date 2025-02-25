@@ -7,6 +7,8 @@
 int should_print = 1;
 int arg_len = 0;
 
+void unknown_var(char *);
+
 int yylex(void);
 int yyerror(const char *);
 
@@ -27,10 +29,11 @@ char *newTemp() {
 struct string {
     char *id;
     int len;
-}string_lengths[10];
-int strCount = 0;
+}string_table[10];
+int count_str = 0;
+int str_search(char *);
+int temp_strCount = 0;
 
-char* func_ret_type;
 int ifCounter = 0;
 int loopCounter = 0;
 
@@ -78,6 +81,11 @@ int count_function_table = 0;
 struct arg_node *current_arg_node;
 
 int func_search(char *);
+char* func_ret_type;
+int in_function = 0;
+
+char string_hold[1024] = "";
+int string_hold_end = 0;
 %}
 
 %union{
@@ -86,7 +94,7 @@ int func_search(char *);
     struct arg_node *input_node;
 }
 
-%token START_OF_FILE REMLIST ADDLIST PLUS MINUS TIMES DIVIDE RCURL SEMICOL COMMA EQL NEQ LSS GTR LEQ GEQ CALL DEF RTRN LOOP TO IF LPAREN RPAREN LBRACK RBRACK LCURL LISTTYPE ASSIGN CAPACITY LEN COMMENT MULTICOMMENT
+%token START_OF_FILE REMLIST ADDLIST PLUS MINUS TIMES DIVIDE RCURL SEMICOL COMMA EQL NEQ LSS GTR LEQ GEQ CALL DEF RTRN LOOP TO IF LPAREN RPAREN LBRACK RBRACK LCURL LISTTYPE ASSIGN CAPACITY LEN COMMENT MULTICOMMENT PRINT
 %token <id> IDENT NUMBER STR BYTE INT STRTYPE
 
 %type st program statement declarations func_dec variable_dec change_val comment flow_control range block step condition function_line function_block arg_func_datatype return 
@@ -107,7 +115,8 @@ int func_search(char *);
 
 %%
 
-st : START_OF_FILE { add('K', "file_begin"); fprintf(out, "source_filename = \"Module\" \ntarget triple = \"x86_64-w64-mingw32\"\n"); } program
+st : START_OF_FILE { add('K', "file_begin"); fprintf(out, "source_filename = \"Module\" \ntarget triple = \"x86_64-w64-windows-gnu\"\n\n"); }
+   program
 	;
 
 program : statement program 
@@ -130,14 +139,33 @@ declarations : func_dec
 
 string_dec : STRTYPE IDENT ASSIGN STR
            {
-           int len = strlen($4)-2;
+           int len = strlen($4)-2+1;
+
            char *str_type = (char *)malloc(7+len+1);
            snprintf(str_type, 7+len+1, "[%d x i8]", len);
-           fprintf(temp_out, "%%%s = alloca %s\nstore [%d x i8] c%s, ptr %%%s\n", $2, str_type, len, $4, $2);
            insert_type(str_type);
            add('V', $2);
-           string_lengths[strCount].id = $2;
-           string_lengths[strCount].len = len;
+
+           string_table[count_str].id = $2;
+           string_table[count_str].len = len;
+           count_str++;
+
+           char res[512];
+
+           int value = len;
+           int l=1;
+           while(value){ l++; value/=10; }
+           int res_len = 1+strlen($2)+22+l+8+strlen($4)+4+1;
+
+           $4[strlen($4)-1] = '\0';
+           snprintf(res, res_len, "@%s = private constant [%d x i8] c%s\\00\"\n", $2, len, $4);
+
+           if (in_function){
+            strcat(string_hold+string_hold_end, res);
+            string_hold_end += res_len;
+           } else{
+            fprintf(out, res);
+            }
            }
 
 comment : COMMENT
@@ -155,13 +183,13 @@ func_dec : DEF
          {
          add('K', "def");
          temp_hold = temp_out; temp_out = out; fprintf(temp_out, "\ndefine ");
-         //TODO add to function table
          function_table[count_function_table].line_number = input_file_line_no;
+         in_function = 1;
          }
          func_datatype
          {
          func_ret_type = $3;
-         fprintf(out, "%s", $3);
+         fprintf(temp_out, "%s", $3);
          }
          IDENT LPAREN
          {
@@ -171,28 +199,37 @@ func_dec : DEF
          }
          func_inp RPAREN
          {
-         fprintf(temp_out, "){\nentry:\n");
          function_table[count_function_table].id = $5;
          function_table[count_function_table].data_type = $3;
          function_table[count_function_table].head = $8;
+         fprintf(temp_out, "){\nentry:\n");
+         
+         struct arg_node *node = function_table[count_function_table].head;
+         while(node){
+             fprintf(temp_out, "%%%s0 = alloca %s\n", node->id, node->data_type);
+             fprintf(temp_out, "store i32 %%%s, ptr %%%s0\n", node->id, node->id);
+             node = node->next;
+        }
+            
          count_function_table++;
          }
-         LCURL function_block RCURL { fprintf(temp_out, "}\n\n"); temp_out = temp_hold; }
+         LCURL function_block RCURL { fprintf(temp_out, "}\n\n"); temp_out = temp_hold; in_function = 0;
+         fprintf(out, string_hold);
+         }
          ;
 
 func_inp : arg_func
              // TODO add to func table
-	| func_inp COMMA arg_func
+	| func_inp { fprintf(temp_out, ", "); } COMMA arg_func
     {
-    fprintf(temp_out, ", ");
-    $1->next = $3;
+    $1->next = $4;
     $$ = $1;
     }
 	| { }
 	;
 
 arg_func : arg_func_datatype IDENT { 
-        fprintf(temp_out, " %%%s0", $2);
+        fprintf(temp_out, " %%%s", $2);
         add('I', $2);
          $$ = (struct arg_node*)malloc(sizeof(struct arg_node));
          $$->id = $2;
@@ -208,8 +245,8 @@ func_datatype : BYTE { $$ = "i8"; insert_type($$); }
 	;
 
 
-arg_func_datatype : BYTE { insert_type("i8"); fprintf(temp_out, "ptr"); }
-	| INT { insert_type("i32"); fprintf(temp_out, "ptr"); }
+arg_func_datatype : BYTE { insert_type("i8"); fprintf(temp_out, "i8"); }
+	| INT { insert_type("i32"); fprintf(temp_out, "i32"); }
 //	| STRTYPE NUMBER { fprintf(temp_out, "[i8 x %d]", atoi($2)); }
 // TODO function input also strings
 	;
@@ -242,9 +279,6 @@ value : IDENT
       {
       int index = search($1);
       if ( index < 0){
-        char msg [1024];
-        snprintf(msg, 18+1+strlen($1), "unknown variable- %s", $1);
-        yyerror(msg);
         }
       char version[512];
       itoa(symbol_table[index].version, version, 10);
@@ -261,6 +295,7 @@ value : IDENT
 
 function_call : CALL IDENT
               LPAREN
+              // TODO args check
               {
               current_arg_node = function_table[func_search($2)].head;
               }
@@ -279,32 +314,74 @@ function_call : CALL IDENT
               snprintf($$, 5+strlen(func_ret_type)+2+strlen($2)+1+strlen($5)+1+1, "call %s @%s(%s)", func_ret_type, $2, $5);
               }
 
-	| CALL CAPACITY LPAREN arg_val RPAREN { add('K', "capacity-func"); }
-	| CALL LEN LPAREN arg_val RPAREN { add('K', "len-func"); }
+	| CALL LEN LPAREN IDENT RPAREN
+    {
+    add('K', "len-func");
+    int index = str_search($4);
+    if (index >= 0){
+        char res[32];
+        snprintf(res, 11+10+1, "add i32 0, %d", string_table[index].len-1);
+        $$ = res;
+    } else{
+        unknown_var($4);
+    }
+    }
+    | CALL PRINT LPAREN NUMBER RPAREN 
+    {
+    char res[128];
+    fprintf(out, "@%d = private constant [%d x i8] c\"%s\\0A\\00\"\n", temp_strCount, strlen($4)+2, $4);
+    snprintf(res, 30+10+2+1, "call i32 @__mingw_printf(ptr @%d)\n", temp_strCount);
+    temp_strCount++;
+    $$ = res;
+    }
+    | CALL PRINT LPAREN IDENT RPAREN 
+    {
+    char res[128];
+
+    if (str_search($4) >= 0){
+        snprintf(res, 30+strlen($4)+45+1, "call i32 @__mingw_printf(ptr @%s)\ncall i32 @__mingw_printf(ptr @newline)\n", $4);
+    } else{
+         $$ = newTemp();
+         snprintf(res, 30+10+2+1, "call i32 @__mingw_printf(ptr @%d, i32 %s)\n", temp_strCount, $$);
+        int index = search($4);
+        if (index >= 0){
+            fprintf(temp_out, "%s = load %s, ptr %%%s0\n", $$, symbol_table[index].data_type, $4);
+        } else{
+            unknown_var($4);
+        }
+        fprintf(out, "@%d = private constant [4 x i8] c\"%%d\\0A\\00\"\n", temp_strCount);
+        temp_strCount++;
+    }
+   
+    $$ = res;
+    }
 	;
 
 arg_val : expression
         {
-        printf("\n%p\n", current_arg_node->next);
-        if (isdigit($1[0])){
+        if (current_arg_node == NULL){
+            yyerror("too many arguments");
+        } else if (isdigit($1[0])){
             insert_type(current_arg_node->data_type);
         } else{
             int index = search($1+1);
             if (index < 0){
-                yyerror("unknown variable");
+                unknown_var($1);
             }
             insert_type(symbol_table[index].data_type);
         }
         snprintf($$, strlen($1)+strlen(type)+2, "%s %s", type, $1);
         arg_len = strlen($1)+strlen(type)+1;
-        current_arg_node = current_arg_node->next;
+        if (current_arg_node){
+            current_arg_node = current_arg_node->next;
+        }
         }
         | arg_val COMMA expression
         {
-        printf("\n%d\n", (current_arg_node == NULL));
         if (current_arg_node == NULL){
-            yyerror("too many variables");
+            yyerror("too many arguments");
         } else if (isdigit($3[0])){
+            // TODO make it as the function requires
             insert_type(current_arg_node->data_type);
         } else{
             int i = 0;
@@ -318,12 +395,15 @@ arg_val : expression
             int index = search($3+1);
             $3[i] = '.';
             if (index < 0){
-                yyerror("unknown variable");
+                unknown_var($3);
             }
             insert_type(symbol_table[index].data_type);
         }
         snprintf($$ + arg_len, strlen($3)+strlen(type)+4, ", %s %s", type, $3);
         arg_len += strlen($3)+strlen(type)+3;
+        if (current_arg_node){
+            current_arg_node = current_arg_node->next;
+        }
         }
         | { }
         ;
@@ -446,6 +526,7 @@ int main(void) {
     temp_out = fopen("temp_llvm.ll", "w");
     yyparse();
 
+    fprintf(out, "@newline = private constant [2 x i8] c\"\\0A\\00\"\n");
     fprintf(out, "\ndefine i32 @main() {\nentry:\n");
 
     fclose(fp);
@@ -461,6 +542,7 @@ int main(void) {
     }
 
     fprintf(out, "ret i32 0\n}\n");
+    fprintf(out, "\ndeclare i32 @__mingw_printf(ptr noundef, ...)\n");
     
     fclose(out);
     fclose(temp_out);
@@ -475,17 +557,30 @@ int main(void) {
     printf("\n\n");
 
 
-    printf("\n\n");
+    printf("\n\nFunctions:");
     printf("\nNAME || RETURN_TYPE || ARGUMENTS || LINE NUMBER\n");
     printf("__________________________________________________\n\n");
     for(i=0; i<count_function_table; i++) {
         printf("%s\t%s\t", function_table[i].id, function_table[i].data_type);
         struct arg_node *node = function_table[i].head;
-        while(node){
-            printf("%s %s, ", node->data_type, node->id);
+        printf("(");
+        if (node){
+            printf("%s %s", node->data_type, node->id);
             node = node->next;
         }
-        printf("%d\n", function_table[i].line_number);
+        while(node){
+            printf(", %s %s", node->data_type, node->id);
+            node = node->next;
+        }
+        printf(")");
+        printf("\t%d\n", function_table[i].line_number);
+    }
+    printf("\n\n");
+
+    printf("\n\nStrings:");
+    printf("\nNAME || LEN\n");
+    for (i = 0; i <count_str; i++){
+        printf("%s\t%d\n", string_table[i].id, string_table[i].len);
     }
     printf("\n\n");
 
@@ -579,6 +674,23 @@ int func_search(char *id){
     int i;
     for (i = count_function_table-1; i>= 0; i--){
         if (strcmp(function_table[i].id, id) == 0){
+            return i;
+        }
+    }
+    return -1;
+}
+
+void unknown_var(char *id){
+    char msg [1024];
+    snprintf(msg, 18+1+strlen(id), "unknown variable %s, ", id);
+    yyerror(msg);
+}
+
+
+int str_search(char *id){
+    int i;
+    for (i = count_str-1; i>= 0; i--){
+        if (strcmp(string_table[i].id, id) == 0){
             return i;
         }
     }

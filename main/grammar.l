@@ -58,8 +58,8 @@ letter             [A-Za-z]
 "int" { yylval.id = strdup(yytext); return INT; }
 "str" { yylval.id = strdup(yytext); return STRTYPE; }
 "list" { yylval.id = strdup(yytext); return LISTTYPE; }
-"capacity" { return CAPACITY; }
 "len" { return LEN; }
+"print" { return PRINT; }
 
 
 [\n] {  input_file_line_no ++; }
