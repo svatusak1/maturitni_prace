@@ -11,7 +11,14 @@ int x = 2
 x = x+4
 x = call add(4, 5) * call add(2, 2)
 
-call print(t)
+call print(x)
 call print(9)
 
 call print(zvire)
+
+loop (int loop_var; 0->10){
+    if (loop_var > 5){
+       int res = call add(call add(2, 3), 8)
+       call print(res)
+    }
+}

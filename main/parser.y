@@ -108,7 +108,7 @@ int string_hold_end = 0;
 %left PLUS MINUS
 %left TIMES DIVIDE
 %right ASSIGN
-%nonassoc EQL NEQ LSS GTR LEQ GEQ
+%nonassoc EQL NEQ LSS GTR LEQ GEQ CALL
 
 %start st
 
@@ -295,7 +295,7 @@ value : IDENT
 
 function_call : CALL IDENT
               LPAREN
-              // TODO args check
+                //  TODO function calls within function calls -- the head gets realocated
               {
               current_arg_node = function_table[func_search($2)].head;
               }
@@ -339,17 +339,16 @@ function_call : CALL IDENT
     char res[128];
 
     if (str_search($4) >= 0){
-        snprintf(res, 30+strlen($4)+45+1, "call i32 @__mingw_printf(ptr @%s)\ncall i32 @__mingw_printf(ptr @newline)\n", $4);
+        snprintf(res, 30+strlen($4)+45+1, "call i32 @__mingw_printf(ptr @%s)\ncall i32 @__mingw_printf(ptr @newline__)\n", $4);
     } else{
          $$ = newTemp();
-         snprintf(res, 30+10+2+1, "call i32 @__mingw_printf(ptr @%d, i32 %s)\n", temp_strCount, $$);
+         snprintf(res, 47+strlen($$)+1, "call i32 @__mingw_printf(ptr @num_str__, i32 %s)\n", $$);
         int index = search($4);
         if (index >= 0){
             fprintf(temp_out, "%s = load %s, ptr %%%s0\n", $$, symbol_table[index].data_type, $4);
         } else{
             unknown_var($4);
         }
-        fprintf(out, "@%d = private constant [4 x i8] c\"%%d\\0A\\00\"\n", temp_strCount);
         temp_strCount++;
     }
    
@@ -364,7 +363,16 @@ arg_val : expression
         } else if (isdigit($1[0])){
             insert_type(current_arg_node->data_type);
         } else{
+            int i = 0;
+            while (i < strlen($1)){
+                if ('.' == $1[i]){
+                    $1[i] = '\0';
+                    break;
+                }
+                i++;
+            }
             int index = search($1+1);
+            $1[i] = '.';
             if (index < 0){
                 unknown_var($1);
             }
@@ -437,14 +445,17 @@ flow_control : LOOP {
     fprintf(temp_out, "br label %%loop_start%d\n", loopCounter);
     fprintf(temp_out, "loop_start%d:\n", loopCounter);
     fprintf(temp_out, "%%i.check = load %s, ptr %%%s0\n", type, $5);
-    fprintf(temp_out, "%%done%d = icmp eq i32 %%i.check, %%max\n", loopCounter);
+    fprintf(temp_out, "%%done%d = icmp sgt i32 %%i.check, %%max\n", loopCounter);
     fprintf(temp_out, "br i1 %%done%d, label %%continue_loop%d, label %%loop%d\n", loopCounter, loopCounter, loopCounter);
     fprintf(temp_out, "loop%d:\n", loopCounter);
 }
              block
              {
+             fprintf(temp_out, "%%loop_var__ = load i32, ptr %%loop_var0\n");
+             fprintf(temp_out, "%%new_loop_Var__ = add i32 1, %%loop_var__\n");
+             fprintf(temp_out, "store i32 %%new_loop_Var__, ptr %%loop_var0\n\n");
              fprintf(temp_out, "br label %%loop_start%d\n", loopCounter);
-             fprintf(temp_out, "continue_loop%d:\n", loopCounter);
+             fprintf(temp_out, "continue_loop%d:\n\n", loopCounter);
              loopCounter++;
              }
 	| IF LPAREN
@@ -526,7 +537,8 @@ int main(void) {
     temp_out = fopen("temp_llvm.ll", "w");
     yyparse();
 
-    fprintf(out, "@newline = private constant [2 x i8] c\"\\0A\\00\"\n");
+    fprintf(out, "@newline__ = private constant [2 x i8] c\"\\0A\\00\"\n");
+    fprintf(out, "@num_str__ = private constant [4 x i8] c\"%%d\\0A\\00\"\n");
     fprintf(out, "\ndefine i32 @main() {\nentry:\n");
 
     fclose(fp);
