@@ -1,11 +1,12 @@
+// TODO static list type
 %{
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
-int should_print = 1;
-int arg_len = 0;
+void remove_after_dot(char* string);
+void insert_str(char *strA, char *strB, int index, char *strC);
 
 void unknown_var(char *);
 
@@ -34,12 +35,14 @@ int count_str = 0;
 int str_search(char *);
 int temp_strCount = 0;
 
-int ifCounter = 0;
+int ifCounter = -1;
 int loopCounter = 0;
 
 struct loop_range {
     char *start;
+    char *start_type;
     char *end;
+    char *end_type;
     char *step;
 };
 
@@ -85,7 +88,34 @@ char* func_ret_type;
 int in_function = 0;
 
 char string_hold[1024] = "";
-int string_hold_end = 0;
+
+void assigne_types(char *func, char *types);
+
+
+struct Stack{
+    int value;
+    struct Stack* next;
+};
+
+struct Stack* IfHead = NULL;
+
+
+void add_if_stack(int value);
+void pop_if_stack();
+int get_top_if_stack();
+
+struct Stack* ForHead = NULL;
+
+void add_for_stack(int value);
+void pop_for_stack();
+int get_top_for_stack();
+
+struct Stack* ArgHead = NULL;
+
+void add_arg_stack(int value);
+int pop_arg_stack();
+int get_top_arg_stack();
+
 %}
 
 %union{
@@ -161,8 +191,7 @@ string_dec : STRTYPE IDENT ASSIGN STR
            snprintf(res, res_len, "@%s = private constant [%d x i8] c%s\\00\"\n", $2, len, $4);
 
            if (in_function){
-            strcat(string_hold+string_hold_end, res);
-            string_hold_end += res_len;
+            strcat(string_hold, res);
            } else{
             fprintf(out, res);
             }
@@ -219,7 +248,6 @@ func_dec : DEF
          ;
 
 func_inp : arg_func
-             // TODO add to func table
 	| func_inp { fprintf(temp_out, ", "); } COMMA arg_func
     {
     $1->next = $4;
@@ -241,14 +269,11 @@ arg_func : arg_func_datatype IDENT {
 
 func_datatype : BYTE { $$ = "i8"; insert_type($$); }
 	| INT { $$ = "i32"; insert_type($$); }
-    //  TODO string type
 	;
 
 
 arg_func_datatype : BYTE { insert_type("i8"); fprintf(temp_out, "i8"); }
 	| INT { insert_type("i32"); fprintf(temp_out, "i32"); }
-//	| STRTYPE NUMBER { fprintf(temp_out, "[i8 x %d]", atoi($2)); }
-// TODO function input also strings
 	;
 
 function_block : function_line 
@@ -267,27 +292,32 @@ return : RTRN expression { add('K', "return");
 expression : expression PLUS expression
            {
            $$ = newTemp(); fprintf(temp_out, "%s = add %s %s, %s\n", $$, type, $1, $3);
+           range.start_type = type;
            }
-	| expression MINUS expression { $$ = newTemp(); fprintf(temp_out, "%s = sub %s %s, %s\n", $$, type, $1, $3); }
-	| expression TIMES expression { $$ = newTemp(); fprintf(temp_out, "%s = mul %s %s, %s\n", $$, type, $1, $3); }
-	| expression DIVIDE expression { $$ = newTemp(); fprintf(temp_out, "%s = udiv %s %s, %s\n", $$, type, $1, $3); }
+	| expression MINUS expression { $$ = newTemp(); fprintf(temp_out, "%s = sub %s %s, %s\n", $$, type, $1, $3); range.start_type = type; }
+	| expression TIMES expression { $$ = newTemp(); fprintf(temp_out, "%s = mul %s %s, %s\n", $$, type, $1, $3); range.start_type = type; }
+	| expression DIVIDE expression { $$ = newTemp(); fprintf(temp_out, "%s = udiv %s %s, %s\n", $$, type, $1, $3); range.start_type = type; }
 	| LPAREN expression RPAREN { $$ = $2; }
-    | value
+    | value { $$ = $1; range.start_type = type; }
 	;
 
 value : IDENT
       {
       int index = search($1);
       if ( index < 0){
-        }
+        unknown_var($1);
+    } else {
       char version[512];
       itoa(symbol_table[index].version, version, 10);
       $$ = (char*)malloc(sizeof(char) * (strlen(yylval.id)+ 1 + strlen(version) + 1));
       snprintf($$, 1+strlen(yylval.id)+1+strlen(version)+1, "%%%s.%s", yylval.id, version);
-      if (should_print){
-          fprintf(temp_out, "%%%s.%d = load %s, ptr %%%s0\n", $1, symbol_table[index].version, symbol_table[index].data_type, $1, $1);
+      int str_index = str_search($1);
+      if (str_index < 0){
+          fprintf(temp_out, "%s = load %s, ptr %%%s0\n", $$, symbol_table[index].data_type, $1, $1);
+          symbol_table[index].version++;
+          snprintf(type, strlen(symbol_table[index].data_type)+1, symbol_table[index].data_type);
+        }
       }
-      symbol_table[index].version++;
       }
 	| NUMBER { $$ = yylval.id; }
       | function_call { $$ = newTemp(); fprintf(temp_out, "%s = %s\n", $$, $1); }
@@ -295,12 +325,9 @@ value : IDENT
 
 function_call : CALL IDENT
               LPAREN
-                //  TODO function calls within function calls -- the head gets realocated
-              {
-              current_arg_node = function_table[func_search($2)].head;
-              }
               arg_val RPAREN 
               {
+              assigne_types($2, $4);
               add('K', "call");
               int index = search($2);
               char *func_ret_type;
@@ -310,9 +337,10 @@ function_call : CALL IDENT
               if (!func_ret_type){
                     yyerror("variable not declared");
                 }
-              $$ = (char*)malloc((5+strlen(func_ret_type)+2+strlen($2)+1+strlen($5)+1+1)*sizeof(char));
-              snprintf($$, 5+strlen(func_ret_type)+2+strlen($2)+1+strlen($5)+1+1, "call %s @%s(%s)", func_ret_type, $2, $5);
-              }
+              $$ = (char*)malloc((5+strlen(func_ret_type)+2+strlen($2)+1+strlen($4)+1+1)*sizeof(char));
+              snprintf($$, 5+strlen(func_ret_type)+2+strlen($2)+1+strlen($4)+1+1, "call %s @%s(%s)", func_ret_type, $2, $4);
+              pop_arg_stack();
+            }
 
 	| CALL LEN LPAREN IDENT RPAREN
     {
@@ -326,94 +354,67 @@ function_call : CALL IDENT
         unknown_var($4);
     }
     }
-    | CALL PRINT LPAREN NUMBER RPAREN 
+    | CALL PRINT LPAREN expression RPAREN 
     {
     char res[128];
-    fprintf(out, "@%d = private constant [%d x i8] c\"%s\\0A\\00\"\n", temp_strCount, strlen($4)+2, $4);
-    snprintf(res, 30+10+2+1, "call i32 @__mingw_printf(ptr @%d)\n", temp_strCount);
-    temp_strCount++;
-    $$ = res;
-    }
-    | CALL PRINT LPAREN IDENT RPAREN 
-    {
-    char res[128];
-
-    if (str_search($4) >= 0){
-        snprintf(res, 30+strlen($4)+45+1, "call i32 @__mingw_printf(ptr @%s)\ncall i32 @__mingw_printf(ptr @newline__)\n", $4);
-    } else{
-         $$ = newTemp();
-         snprintf(res, 47+strlen($$)+1, "call i32 @__mingw_printf(ptr @num_str__, i32 %s)\n", $$);
-        int index = search($4);
-        if (index >= 0){
-            fprintf(temp_out, "%s = load %s, ptr %%%s0\n", $$, symbol_table[index].data_type, $4);
-        } else{
-            unknown_var($4);
+    if ($4[0] == '%'){
+        int i = 0;
+        while ($4[i] != '.' && i < strlen($4)){
+            i++;
         }
+        if (i < strlen($4)){
+            $4[i] = '\0';
+            $4++;
+
+            if (str_search($4) >= 0){
+                snprintf(res, 30+strlen($4)+45+1, "call i32 @__mingw_printf(ptr @%s)\ncall i32 @__mingw_printf(ptr @newline__)\n", $4);
+            } else{
+                int index = search($4);
+                if (index >= 0){
+                    char *data_type = symbol_table[index].data_type;
+                     $$ = newTemp();
+                    fprintf(temp_out, "%s = load %s, ptr %%%s0\n", $$, data_type, $4);
+                     if (strcmp(data_type, "i32") != 0){
+                        char *tmp_var = newTemp();
+                        fprintf(temp_out, "%s = sext %s %s to i32\n", tmp_var, data_type, $$);
+                        $$ = tmp_var;
+                    }
+                     snprintf(res, 47+strlen($$)+1, "call i32 @__mingw_printf(ptr @num_str__, i32 %s)\n", $$);
+                } else{
+                    unknown_var($4);
+                }
+                temp_strCount++;
+            }
+        } else{
+             snprintf(res, 47+strlen($$)+1, "call i32 @__mingw_printf(ptr @num_str__, i32 %s)\n", $4);
+        }
+    } else if (isdigit($4[0]) != 0){
+        snprintf(res, 1+20+21+20+2+9+strlen($4)+2, "@%d = private constant [%d x i8] c\"%s\\0A\\00\"\n", temp_strCount, strlen($4)+2, $4);
+       if (in_function){
+        strcat(string_hold, res);
+       } else{
+        fprintf(out, res);
+        }
+        snprintf(res, 30+10+2+1, "call i32 @__mingw_printf(ptr @%d)\n", temp_strCount);
         temp_strCount++;
     }
-   
     $$ = res;
     }
 	;
 
 arg_val : expression
         {
-        if (current_arg_node == NULL){
-            yyerror("too many arguments");
-        } else if (isdigit($1[0])){
-            insert_type(current_arg_node->data_type);
-        } else{
-            int i = 0;
-            while (i < strlen($1)){
-                if ('.' == $1[i]){
-                    $1[i] = '\0';
-                    break;
-                }
-                i++;
-            }
-            int index = search($1+1);
-            $1[i] = '.';
-            if (index < 0){
-                unknown_var($1);
-            }
-            insert_type(symbol_table[index].data_type);
-        }
-        snprintf($$, strlen($1)+strlen(type)+2, "%s %s", type, $1);
-        arg_len = strlen($1)+strlen(type)+1;
-        if (current_arg_node){
-            current_arg_node = current_arg_node->next;
-        }
+            snprintf($$, 1 + strlen($1)+1, " %s", $1);
+            add_arg_stack(strlen($1)+1);
         }
         | arg_val COMMA expression
         {
-        if (current_arg_node == NULL){
-            yyerror("too many arguments");
-        } else if (isdigit($3[0])){
-            // TODO make it as the function requires
-            insert_type(current_arg_node->data_type);
-        } else{
-            int i = 0;
-            while (i < strlen($3)){
-                if ('.' == $3[i]){
-                    $3[i] = '\0';
-                    break;
-                }
-                i++;
-            }
-            int index = search($3+1);
-            $3[i] = '.';
-            if (index < 0){
-                unknown_var($3);
-            }
-            insert_type(symbol_table[index].data_type);
+        int arg_len = pop_arg_stack();
+        int len = 2+strlen($3)+1;
+        snprintf($$+arg_len, len, ", %s", $3);
+        add_arg_stack(arg_len+len-1);
         }
-        snprintf($$ + arg_len, strlen($3)+strlen(type)+4, ", %s %s", type, $3);
-        arg_len += strlen($3)+strlen(type)+3;
-        if (current_arg_node){
-            current_arg_node = current_arg_node->next;
-        }
-        }
-        | { }
+        | {}
         ;
 
 
@@ -431,8 +432,10 @@ datatype : BYTE { $$ = "i8"; insert_type("i8"); }
 
 
 flow_control : LOOP {
-             fprintf(temp_out, "\nbr label %%entry_loop%d\n", loopCounter);
-             fprintf(temp_out, "entry_loop%d:\n", loopCounter);
+             loopCounter++;
+             add_for_stack(loopCounter);
+             fprintf(temp_out, "\nbr label %%entry_loop%d\n", get_top_for_stack());
+             fprintf(temp_out, "entry_loop%d:\n", get_top_for_stack());
              add('K', "loop");
              }
              LPAREN datatype IDENT
@@ -440,42 +443,52 @@ flow_control : LOOP {
 {
     fprintf(temp_out, "%%%s0 = alloca %s\n", $5, type);
     fprintf(temp_out, "store %s %s, ptr %%%s0\n", type, range.start, $5);
+    fprintf(temp_out, "%%loop_var_comp__ = load %s, ptr %%%s0\n", type, $5);
     add('V', $5);
-    fprintf(temp_out, "%%max = add i32 0, %s\n", range.end);
-    fprintf(temp_out, "br label %%loop_start%d\n", loopCounter);
-    fprintf(temp_out, "loop_start%d:\n", loopCounter);
-    fprintf(temp_out, "%%i.check = load %s, ptr %%%s0\n", type, $5);
-    fprintf(temp_out, "%%done%d = icmp sgt i32 %%i.check, %%max\n", loopCounter);
-    fprintf(temp_out, "br i1 %%done%d, label %%continue_loop%d, label %%loop%d\n", loopCounter, loopCounter, loopCounter);
-    fprintf(temp_out, "loop%d:\n", loopCounter);
+    fprintf(temp_out, "%%max%d = add i32 0, %s\n", get_top_for_stack(), range.end);
+    fprintf(temp_out, "%%condition = icmp sgt %s %%max%d, %%loop_var_comp__\n", type, get_top_for_stack());
+    fprintf(temp_out, "br label %%loop_start%d\n", get_top_for_stack());
+    fprintf(temp_out, "loop_start%d:\n", get_top_for_stack());
+    fprintf(temp_out, "%%i.check%d = load %s, ptr %%%s0\n", get_top_for_stack(), type, $5);
+    // TODO create two loop branches, one with slt and step = -1; second with sgt and step = +1; 
+
+    char *condition;
+    if (atoi(range.start) <= atoi(range.end)){
+        condition = "sgt";
+    } else{
+        condition = "slt";
+        range.step = "-1";
+    }
+    fprintf(temp_out, "%%done%d = icmp %s i32 %%i.check%d, %%max%d\n", get_top_for_stack(), condition, get_top_for_stack(), get_top_for_stack());
+    fprintf(temp_out, "br i1 %%done%d, label %%continue_loop%d, label %%loop%d\n", get_top_for_stack(), get_top_for_stack(), get_top_for_stack());
+    fprintf(temp_out, "loop%d:\n", get_top_for_stack());
 }
              block
              {
-             fprintf(temp_out, "%%loop_var__ = load i32, ptr %%loop_var0\n");
-             fprintf(temp_out, "%%new_loop_Var__ = add i32 1, %%loop_var__\n");
-             fprintf(temp_out, "store i32 %%new_loop_Var__, ptr %%loop_var0\n\n");
-             fprintf(temp_out, "br label %%loop_start%d\n", loopCounter);
-             fprintf(temp_out, "continue_loop%d:\n\n", loopCounter);
-             loopCounter++;
+             fprintf(temp_out, "\n%%loop_var%d__ = load i32, ptr %%%s0\n", get_top_for_stack(), $5);
+             fprintf(temp_out, "%%new_loop_var%d__ = add i32 %s, %%loop_var%d__\n", get_top_for_stack(), range.step, get_top_for_stack());
+             fprintf(temp_out, "store i32 %%new_loop_var%d__, ptr %%%s0\n\n", get_top_for_stack(), $5);
+             fprintf(temp_out, "br label %%loop_start%d\n", get_top_for_stack());
+             fprintf(temp_out, "continue_loop%d:\n\n", get_top_for_stack());
+             pop_for_stack();
              }
 	| IF LPAREN
     {
-    should_print = 0;
+    ifCounter ++;
     add('K', "if");
-    fprintf(temp_out, "\n");
+    add_if_stack(ifCounter);
     }
     condition RPAREN
     {
-    fprintf(temp_out, "br i1 %%condition%d, label %%if%d, label %%continue_if%d\nif%d:\n", ifCounter, ifCounter, ifCounter, ifCounter);
-    should_print = 1;
+    fprintf(temp_out, "br i1 %%condition%d, label %%if%d, label %%continue_if%d\nif%d:\n", get_top_if_stack(), get_top_if_stack(), get_top_if_stack(), get_top_if_stack());
     }
     block
-    { fprintf(temp_out, "br label %%continue_if%d\ncontinue_if%d:\n\n", ifCounter, ifCounter); 
-    ifCounter ++;
+    { fprintf(temp_out, "br label %%continue_if%d\ncontinue_if%d:\n\n", get_top_if_stack(), get_top_if_stack()); 
+    pop_if_stack();
     }
     ;
 
-range: expression TO expression { range.start = $1; range.end = $3; }
+range: expression TO expression { range.start = $1; range.end = $3; range.end_type = type; }
 	| expression TO expression SEMICOL step { range.start = $1; range.end = $3; range.step = $5; }
 	;
 
@@ -484,27 +497,8 @@ step : expression
 
 condition : expression comp expression
           {
-            int i = 0;
-            while (i < strlen($1)){
-                if ('.' == $1[i]){
-                    $1[i] = '\0';
-                    break;
-                }
-                i++;
-            }
-
-            i = 0;
-            while (i < strlen($3)){
-                if ('.' == $3[i]){
-                    $3[i] = '\0';
-                    break;
-                }
-                i++;
-            }
-          fprintf(temp_out, "%%c%d = load i32, ptr %s0\n", ifCounter, $1);
-          fprintf(temp_out, "%%condition%d = icmp %s i32 %%c%d, %s\n", ifCounter, $2, ifCounter, $3);
+          fprintf(temp_out, "%%condition%d = icmp %s i32 %s, %s\n", get_top_if_stack(), $2, $1, $3);
           }
-          //todo load if variable else not 
 	;
 
 comp : EQL { $$ = "eq"; }
@@ -531,7 +525,7 @@ int yywrap(){
 
 int main(void) {
     FILE *fp;
-    fp = fopen("test.rog","r");
+    fp = fopen("test_adv.rog","r");
     yyin = fp;
     out = fopen("out.ll", "w");
     temp_out = fopen("temp_llvm.ll", "w");
@@ -707,4 +701,105 @@ int str_search(char *id){
         }
     }
     return -1;
+}
+
+void insert_str(char *strA, char *strB, int index, char *strC){
+    char A[strlen(strA)];
+    strcpy(A, strA);
+
+    strncpy(strC, A, index);
+    strC[index] = '\0';
+    strcat(strC, strB);
+    strcat(strC, A + index);
+}
+
+void assigne_types(char *func, char *types){
+    int index = func_search(func);
+    if (index < 0){
+        yyerror("function not declared");
+    } else{
+        struct arg_node *current = function_table[index].head;
+        int index_types = 0;
+        while(current){
+            
+            insert_str(types, current->data_type, index_types, types);
+            current = current->next;
+            index_types ++;
+            while (types[index_types] != ',' && index_types < strlen(types)){
+                index_types++;
+            }
+            index_types++;
+            
+        }
+    }
+}
+
+
+void add_if_stack(int value){
+
+    struct Stack *new_node = (struct Stack*)malloc(sizeof(struct Stack));
+    new_node->value = value;
+    new_node->next = IfHead;
+    IfHead = new_node;
+
+}
+void pop_if_stack(){
+
+    struct Stack *tmp = IfHead;
+    IfHead = IfHead->next;
+    free(tmp);
+
+}
+
+int get_top_if_stack(){
+    return IfHead->value;
+}
+
+void add_for_stack(int value){
+
+    struct Stack *new_node = (struct Stack*)malloc(sizeof(struct Stack));
+    new_node->value = value;
+    new_node->next = ForHead;
+    ForHead = new_node;
+
+}
+void pop_for_stack(){
+    struct Stack *tmp = ForHead;
+    ForHead = ForHead->next;
+    free(tmp);
+
+}
+
+int get_top_for_stack(){
+    return ForHead->value;
+}
+
+
+void add_arg_stack(int value){
+
+    struct Stack *new_node = (struct Stack*)malloc(sizeof(struct Stack));
+    new_node->value = value;
+    new_node->next = ArgHead;
+    ArgHead = new_node;
+
+}
+int pop_arg_stack(){
+    struct Stack *tmp = ArgHead;
+    ArgHead = ArgHead->next;
+    int value = tmp->value;
+    free(tmp);
+    return value;
+
+}
+
+int get_top_arg_stack(){
+    return ArgHead->value;
+}
+
+void remove_after_dot(char *string){
+    int index = 0;
+    while (string[index] != '.' && strlen(string) > index){
+        index ++;
+    }
+    string[index] = '\0';
 }

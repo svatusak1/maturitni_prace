@@ -13,33 +13,19 @@ func int simon_says(int r, int t){
 
 func int adition_function(int dobrman)
 {
-    int alk = dobrman + adolf
-    3+44
+    int alk = dobrman + 4
+    call print(alk)
     str pozdrav = "no nazdar"
     
-    call print(pozdrav)
-    return pozdrav
+    call print(ubrousek)
     int zdravim = 0
     byte balo = 10
-    call simon_says(zdravim, balo)
-    byte kokos = call add(1, 2, 3)
 
-    loop (byte i; 0 -> 10; 1)
-    {
-        int ahoj = i
-    }
-    loop (byte k; 0 -> 10)
-    {
-        krakonos = i + 1
-        call print(k)
-    }
-
-    if ( 1 > 10){
-        call rozklovej()
-        ahoj = doh + 9 * total
+    loop (int x; 10->alk; 1){
+        call print(10)
     }
 
 
-    return adolf + k
+    return zdravim + alk
 }
-call adition_function(10, 20, vcelky)
+int kamo_ale = call adition_function(10)
