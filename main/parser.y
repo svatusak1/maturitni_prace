@@ -442,33 +442,42 @@ flow_control : LOOP {
              SEMICOL range RPAREN
 {
     fprintf(temp_out, "%%%s0 = alloca %s\n", $5, type);
+    add('V', $5);
     fprintf(temp_out, "store %s %s, ptr %%%s0\n", type, range.start, $5);
     fprintf(temp_out, "%%loop_var_comp__ = load %s, ptr %%%s0\n", type, $5);
-    add('V', $5);
     fprintf(temp_out, "%%max%d = add i32 0, %s\n", get_top_for_stack(), range.end);
-    fprintf(temp_out, "%%condition = icmp sgt %s %%max%d, %%loop_var_comp__\n", type, get_top_for_stack());
+    fprintf(temp_out, "%%condition_for%d = icmp sgt %s %%max%d, %%loop_var_comp__\n", get_top_for_stack(), type, get_top_for_stack());
     fprintf(temp_out, "br label %%loop_start%d\n", get_top_for_stack());
+
     fprintf(temp_out, "loop_start%d:\n", get_top_for_stack());
     fprintf(temp_out, "%%i.check%d = load %s, ptr %%%s0\n", get_top_for_stack(), type, $5);
-    // TODO create two loop branches, one with slt and step = -1; second with sgt and step = +1; 
+    fprintf(temp_out, "br i1 %%condition_for%d, label %%sgt1%d__, label %%slt1%d__\n", get_top_for_stack(), get_top_for_stack(), get_top_for_stack());
 
-    char *condition;
-    if (atoi(range.start) <= atoi(range.end)){
-        condition = "sgt";
-    } else{
-        condition = "slt";
-        range.step = "-1";
-    }
-    fprintf(temp_out, "%%done%d = icmp %s i32 %%i.check%d, %%max%d\n", get_top_for_stack(), condition, get_top_for_stack(), get_top_for_stack());
-    fprintf(temp_out, "br i1 %%done%d, label %%continue_loop%d, label %%loop%d\n", get_top_for_stack(), get_top_for_stack(), get_top_for_stack());
+    fprintf(temp_out, "sgt1%d__:\n", get_top_for_stack());
+    fprintf(temp_out, "%%done_sgt%d = icmp sgt i32 %%i.check%d, %%max%d\n", get_top_for_stack(), get_top_for_stack(), get_top_for_stack());
+    fprintf(temp_out, "br i1 %%done_sgt%d, label %%continue_loop%d, label %%loop%d\n", get_top_for_stack(), get_top_for_stack(), get_top_for_stack());
+
+    fprintf(temp_out, "slt1%d__:\n", get_top_for_stack());
+    fprintf(temp_out, "%%done_slt%d = icmp slt i32 %%i.check%d, %%max%d\n", get_top_for_stack(), get_top_for_stack(), get_top_for_stack());
+    fprintf(temp_out, "br i1 %%done_slt%d, label %%continue_loop%d, label %%loop%d\n", get_top_for_stack(), get_top_for_stack(), get_top_for_stack());
+
     fprintf(temp_out, "loop%d:\n", get_top_for_stack());
 }
              block
              {
              fprintf(temp_out, "\n%%loop_var%d__ = load i32, ptr %%%s0\n", get_top_for_stack(), $5);
-             fprintf(temp_out, "%%new_loop_var%d__ = add i32 %s, %%loop_var%d__\n", get_top_for_stack(), range.step, get_top_for_stack());
-             fprintf(temp_out, "store i32 %%new_loop_var%d__, ptr %%%s0\n\n", get_top_for_stack(), $5);
+             fprintf(temp_out, "br i1 %%condition_for%d, label %%sgt2%d__, label %%slt2%d__\n", get_top_for_stack(), get_top_for_stack(), get_top_for_stack());
+             
+             fprintf(temp_out, "sgt2%d__:\n", get_top_for_stack());
+             fprintf(temp_out, "%%new_loop_var_sgt%d__ = add i32 %s, %%loop_var%d__\n", get_top_for_stack(), range.step, get_top_for_stack());
+             fprintf(temp_out, "store i32 %%new_loop_var_sgt%d__, ptr %%%s0\n\n", get_top_for_stack(), $5);
              fprintf(temp_out, "br label %%loop_start%d\n", get_top_for_stack());
+
+             fprintf(temp_out, "slt2%d__:\n", get_top_for_stack());
+             fprintf(temp_out, "%%new_loop_var_slt%d__ = add i32 -%s, %%loop_var%d__\n", get_top_for_stack(), range.step, get_top_for_stack());
+             fprintf(temp_out, "store i32 %%new_loop_var_slt%d__, ptr %%%s0\n\n", get_top_for_stack(), $5);
+             fprintf(temp_out, "br label %%loop_start%d\n", get_top_for_stack());
+
              fprintf(temp_out, "continue_loop%d:\n\n", get_top_for_stack());
              pop_for_stack();
              }
@@ -488,18 +497,24 @@ flow_control : LOOP {
     }
     ;
 
-range: expression TO expression { range.start = $1; range.end = $3; range.end_type = type; }
-	| expression TO expression SEMICOL step { range.start = $1; range.end = $3; range.step = $5; }
-	;
+range : expression TO expression { range.start = $1; range.end = $3; range.end_type = type; } |
+      expression TO expression SEMICOL step { range.start = $1; range.end = $3; range.step = $5; }
+      ;
 
-step : expression 
-	;
+step : expression
+     {
+     if ($1[0] == '-'){
+         $1++;
+     }
+     $$ = $1;
+     }
+     ;
 
 condition : expression comp expression
           {
           fprintf(temp_out, "%%condition%d = icmp %s i32 %s, %s\n", get_top_if_stack(), $2, $1, $3);
           }
-	;
+          ;
 
 comp : EQL { $$ = "eq"; }
      | NEQ { $$ = "neq"; }
@@ -525,7 +540,7 @@ int yywrap(){
 
 int main(void) {
     FILE *fp;
-    fp = fopen("test_adv.rog","r");
+    fp = fopen("test.rog","r");
     yyin = fp;
     out = fopen("out.ll", "w");
     temp_out = fopen("temp_llvm.ll", "w");

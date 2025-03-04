@@ -20,6 +20,6 @@ x = x+4
 
 ## call print(zvire)
 
-loop (int loop_var; 10->0; -1){
-    call print(call add(4, call multiply(1, loop_var)))
+loop (int loop_var; x->0; -1){
+    call print(loop_var)
 }

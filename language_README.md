@@ -52,6 +52,8 @@ right now cannot actualy be used for anything more or less :)
     len() is used to get number of elements in list and the length of a string
 }
 
+global variables can't be acceced in functions (strings can be acceced anywhere)
+
 ------------------------------------------------------------------------------
 OPERATORS
 
@@ -61,6 +63,8 @@ following arithmetic operators are available:
     - subtraction
     * multiplication
     / division
+    
+    applicable only between variables of the same type
 
 comparing operators available:
 
@@ -70,6 +74,8 @@ comparing operators available:
     >= greater then or equal
     == equals
     != does not equal
+
+    applicable only between variables of the same type
 
 ------------------------------------------------------------------------------
 FLOW CONTROL
@@ -84,14 +90,14 @@ if (1 < counter)
 
 loops are range like:
 
-loop (variable_to_loop_on; range_min -> range_max(exclusiv); optional_step)
+loop (variable_to_loop_on; range_min -> range_max(inclusive); optional_step)
 {
     ## here happenes something
 }
 
 ## default step is +1
 
-## loops 5 times with i = 0, then 1, then 2, 3, 4
+## loops 6 times with i = 0, then 1, then 2, 3, 4, 5
 loop (byte i; 0 -> 5) 
 {
     counter = counter + i * 10
@@ -108,7 +114,7 @@ loop (int i; 10 -> 0; -1)
 }
 
 
-list and strings return a syntax error in boolean statements evaluation
+strings return a syntax error in boolean statements evaluation
 
 ------------------------------------------------------------------------------
 FUNCTIONS
