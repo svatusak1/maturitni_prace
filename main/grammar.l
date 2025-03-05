@@ -17,12 +17,9 @@ letter             [A-Za-z]
 ##[^[].* {  return COMMENT; } 
 
     /*.identify multiline comments */
-"##[[" { BEGIN COMMENTSTATE;
-          return MULTICOMMENT; }
+"##[[" { BEGIN COMMENTSTATE; return MULTICOMMENT; }
 
-<COMMENTSTATE>[^#\]]+ { /* ignore comment */}
-<COMMENTSTATE>"]]##" { BEGIN INITIAL; }
-<COMMENTSTATE>[#\]] { /* rest */}
+<COMMENTSTATE>"]]##" { BEGIN INITIAL; printf("zkoncil komentar\n"); }
 
 
 "start-ROG" { return START_OF_FILE;  }

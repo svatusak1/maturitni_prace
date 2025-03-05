@@ -38,6 +38,9 @@ store i32 2, ptr %x0
 %x.0 = load i32, ptr %x0
 %t2 = add i32 %x.0, 4
 store i32 %t2, ptr %x0
+%t3 = call i32 @__mingw_printf(ptr @zvire)
+call i32 @__mingw_printf(ptr @newline__)
+
 
 br label %entry_loop1
 entry_loop1:
@@ -45,7 +48,7 @@ entry_loop1:
 %loop_var0 = alloca i32
 store i32 %x.1, ptr %loop_var0
 %loop_var_comp__ = load i32, ptr %loop_var0
-%max1 = add i32 -1, 0
+%max1 = add i32 0, 0
 %condition_for1 = icmp sgt i32 %max1, %loop_var_comp__
 br label %loop_start1
 loop_start1:
@@ -59,8 +62,8 @@ slt11__:
 br i1 %done_slt1, label %continue_loop1, label %loop1
 loop1:
 %loop_var.0 = load i32, ptr %loop_var0
-%t3 = load i32, ptr %loop_var0
-%t4 = call i32 @__mingw_printf(ptr @num_str__, i32 %t3)
+%t4 = load i32, ptr %loop_var0
+%t5 = call i32 @__mingw_printf(ptr @num_str__, i32 %t4)
 
 
 %loop_var1__ = load i32, ptr %loop_var0

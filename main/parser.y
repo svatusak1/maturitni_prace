@@ -1,4 +1,5 @@
 // TODO static list type
+
 %{
 #include <stdio.h>
 #include <stdlib.h>
@@ -116,6 +117,8 @@ void add_arg_stack(int value);
 int pop_arg_stack();
 int get_top_arg_stack();
 
+void free_head(struct Stack*);
+
 %}
 
 %union{
@@ -175,6 +178,7 @@ string_dec : STRTYPE IDENT ASSIGN STR
            snprintf(str_type, 7+len+1, "[%d x i8]", len);
            insert_type(str_type);
            add('V', $2);
+           free(str_type);
 
            string_table[count_str].id = $2;
            string_table[count_str].len = len;
@@ -205,6 +209,7 @@ change_val : IDENT ASSIGN {
            insert_type(symbol_table[search($1)].data_type);
            } expression {
            fprintf(temp_out, "store %s %s, ptr %%%s0\n", type, $4, $1);
+           free($4);
            }
            ;
 
@@ -284,22 +289,48 @@ function_line : statement
 	| return { fprintf(temp_out, "\n"); }
 	;
 
-return : RTRN expression { add('K', "return"); 
-       fprintf(temp_out, "ret %s %s", func_ret_type, $2); }
-	;
+return : RTRN expression
+       {
+       add('K', "return"); 
+       fprintf(temp_out, "ret %s %s", func_ret_type, $2);
+       free($2);
+       }
+       ;
 
 
 expression : expression PLUS expression
            {
            $$ = newTemp(); fprintf(temp_out, "%s = add %s %s, %s\n", $$, type, $1, $3);
            range.start_type = type;
+           free($1);
+           free($3);
            }
-	| expression MINUS expression { $$ = newTemp(); fprintf(temp_out, "%s = sub %s %s, %s\n", $$, type, $1, $3); range.start_type = type; }
-	| expression TIMES expression { $$ = newTemp(); fprintf(temp_out, "%s = mul %s %s, %s\n", $$, type, $1, $3); range.start_type = type; }
-	| expression DIVIDE expression { $$ = newTemp(); fprintf(temp_out, "%s = udiv %s %s, %s\n", $$, type, $1, $3); range.start_type = type; }
-	| LPAREN expression RPAREN { $$ = $2; }
-    | value { $$ = $1; range.start_type = type; }
-	;
+	       
+		   | expression MINUS expression
+	       {
+	       $$ = newTemp(); fprintf(temp_out, "%s = sub %s %s, %s\n", $$, type, $1, $3); range.start_type = type;
+           free($1);
+           free($3);
+	       }
+	       
+		   | expression TIMES expression
+	       {
+	       $$ = newTemp(); fprintf(temp_out, "%s = mul %s %s, %s\n", $$, type, $1, $3); range.start_type = type;
+           free($1);
+           free($3);
+	       }
+	       
+		   | expression DIVIDE expression
+	       {
+	       $$ = newTemp(); fprintf(temp_out, "%s = udiv %s %s, %s\n", $$, type, $1, $3); range.start_type = type;
+           free($1);
+           free($3);
+           }
+	       
+		   | LPAREN expression RPAREN { $$ = $2; }
+           
+		   | value { $$ = $1; range.start_type = type; }
+	       ;
 
 value : IDENT
       {
@@ -385,6 +416,7 @@ function_call : CALL IDENT
                 }
                 temp_strCount++;
             }
+            $4--;
         } else{
              snprintf(res, 47+strlen($$)+1, "call i32 @__mingw_printf(ptr @num_str__, i32 %s)\n", $4);
         }
@@ -399,6 +431,7 @@ function_call : CALL IDENT
         temp_strCount++;
     }
     $$ = res;
+    free($4);
     }
 	;
 
@@ -406,6 +439,7 @@ arg_val : expression
         {
             snprintf($$, 1 + strlen($1)+1, " %s", $1);
             add_arg_stack(strlen($1)+1);
+            free($1);
         }
         | arg_val COMMA expression
         {
@@ -413,6 +447,7 @@ arg_val : expression
         int len = 2+strlen($3)+1;
         snprintf($$+arg_len, len, ", %s", $3);
         add_arg_stack(arg_len+len-1);
+        free($3);
         }
         | {}
         ;
@@ -422,6 +457,7 @@ variable_dec : datatype IDENT ASSIGN expression {
              add('V', $2);
             fprintf(temp_out, "%%%s0 = alloca %s\n", $2, $1);
             fprintf(temp_out, "store %s %s, ptr %%%s0\n", $1, $4, $2);
+            free($4);
             }
 
             ;
@@ -497,8 +533,8 @@ flow_control : LOOP {
     }
     ;
 
-range : expression TO expression { range.start = $1; range.end = $3; range.end_type = type; } |
-      expression TO expression SEMICOL step { range.start = $1; range.end = $3; range.step = $5; }
+range : expression TO expression { range.start = $1; range.end = $3; range.end_type = type; free($1); free($3); }
+      | expression TO expression SEMICOL step { range.start = $1; range.end = $3; range.step = $5; free($1); free($3); }
       ;
 
 step : expression
@@ -762,7 +798,7 @@ void pop_if_stack(){
 
     struct Stack *tmp = IfHead;
     IfHead = IfHead->next;
-    free(tmp);
+    free_head(tmp);
 
 }
 
@@ -781,7 +817,7 @@ void add_for_stack(int value){
 void pop_for_stack(){
     struct Stack *tmp = ForHead;
     ForHead = ForHead->next;
-    free(tmp);
+    free_head(tmp);
 
 }
 
@@ -802,7 +838,7 @@ int pop_arg_stack(){
     struct Stack *tmp = ArgHead;
     ArgHead = ArgHead->next;
     int value = tmp->value;
-    free(tmp);
+    free_head(tmp);
     return value;
 
 }
@@ -817,4 +853,13 @@ void remove_after_dot(char *string){
         index ++;
     }
     string[index] = '\0';
+}
+
+void free_head(struct Stack* head){
+    struct Stack* next = head->next;
+    while (next){
+        free(head);
+        head = next;
+        next = head->next;
+    }
 }
