@@ -1,10 +1,12 @@
 // TODO static list type
+// TODO solve why crashing when list accesing with variables
 
 %{
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 
 void remove_after_dot(char* string);
 void insert_str(char *strA, char *strB, int index, char *strC);
@@ -50,7 +52,7 @@ struct loop_range {
 struct loop_range range = {"0", "0", "1"};
 
 
-char type[10];
+char type[32];
 void add(char, char*);
 struct symbolDataType {
     char *data_type;
@@ -117,7 +119,23 @@ void add_arg_stack(int value);
 int pop_arg_stack();
 int get_top_arg_stack();
 
+struct ArrStack{
+    char *value;
+    struct ArrStack *next;
+};
+
+struct ArrStack* ArrHead = NULL;
+
+void add_arr_stack(char* value);
+char *pop_arr_stack();
+char *get_top_arr_stack();
+void free_arr_head(struct ArrStack* head);
+void print_arr_stack();
+
 void free_head(struct Stack*);
+
+char *array_type;
+int arr_access_count = 0;
 
 %}
 
@@ -127,12 +145,12 @@ void free_head(struct Stack*);
     struct arg_node *input_node;
 }
 
-%token START_OF_FILE REMLIST ADDLIST PLUS MINUS TIMES DIVIDE RCURL SEMICOL COMMA EQL NEQ LSS GTR LEQ GEQ CALL DEF RTRN LOOP TO IF LPAREN RPAREN LBRACK RBRACK LCURL LISTTYPE ASSIGN CAPACITY LEN COMMENT MULTICOMMENT PRINT
+%token START_OF_FILE PLUS MINUS TIMES DIVIDE RCURL SEMICOL COMMA EQL NEQ LSS GTR LEQ GEQ CALL DEF RTRN LOOP TO IF LPAREN RPAREN LBRACK RBRACK LCURL ASSIGN CAPACITY LEN COMMENT MULTICOMMENT PRINT ARRTYPE
 %token <id> IDENT NUMBER STR BYTE INT STRTYPE
 
-%type st program statement declarations func_dec variable_dec change_val comment flow_control range block step condition function_line function_block arg_func_datatype return 
-%type <id> expression datatype value func_datatype comp function_call step
-%type <arguments> arg_val
+%type st program statement declarations func_dec variable_dec change_val comment flow_control range block step condition function_line function_block arg_func_datatype return
+%type <id> access_array expression datatype value func_datatype comp function_call step
+%type <arguments> arg_val array_spec
 %type <input_node> func_inp arg_func
 
 
@@ -159,16 +177,116 @@ program : statement program
 statement : declarations
 	| expression
 	| flow_control 
-	| change_val
+    | change
 	| comment 
 	;
+
+change : change_array
+       | change_val
+       ;
+
+
+change_array : IDENT array_spec ASSIGN expression
+             {
+             int index = search($1);
+             if (index >= 0){
+                  struct ArrStack *current = ArrHead;
+                    int len = 0;
+                    while(current->next){
+                    len++;
+                    current = current->next;
+                    }
+                    current = ArrHead;
+                  int i = 0;
+                  while (current && i < len){
+                  struct ArrStack *tmp = current;
+                    while(current->next){
+                    current = current->next;
+                    }
+                    current->next = tmp;
+                  struct ArrStack *tmp1 = tmp->next;
+                    tmp->next = NULL;
+                    current = tmp1;
+                    i++;
+                    }
+                  char spec[32];
+                    snprintf(spec, 6+strlen(current->value)+1, ", i32 %s", current->value);
+                current = current->next;
+                while (current){
+                    char *tmp = strdup(spec);
+                    snprintf(spec, strlen(tmp)+6+strlen(current->value)+1, "%s, i32 %s", tmp, current->value);
+                    current = current->next;
+                }
+                
+                 char *data_type = symbol_table[index].data_type;
+                 fprintf(temp_out, "%%idx%d = getelementptr %s, ptr %%%s0, i32 0%s\n", arr_access_count, data_type, $1, spec);
+                 i = strlen(data_type);
+                 while (i >= 0 && data_type[i] != ' '){
+                    i--;
+                };
+                i++;
+                char arr_type[32];
+                int indentation = 0;
+                while (i < strlen(data_type) && data_type[i] != ']'){
+                    snprintf(arr_type+indentation, 1+1, "%c", data_type[i]);
+                    indentation++;
+                    i++;
+                    }
+
+                 fprintf(temp_out, "store %s %s, ptr %%idx%d\n", arr_type, $4, arr_access_count);
+             } else{
+                unknown_var($1);
+                }
+            free_arr_head(ArrHead);
+            ArrHead = NULL;
+            arr_access_count++;
+             }
+             //TODO check if correct indexing
+             ;
+
+array_spec : LBRACK expression RBRACK { add_arr_stack($2); }
+                  | array_spec LBRACK expression RBRACK { add_arr_stack($3); }
+                  ;
 
 
 declarations : func_dec 
 	| variable_dec
     | string_dec
+    | array_dec
 	;
 
+
+array_dec : ARRTYPE datatype { array_type = type; } IDENT array_spec
+          {
+          char spec[32];
+          struct ArrStack *current = ArrHead;
+          snprintf(spec, 1+strlen($2)+3+strlen(current->value)+1+1, "[%s x %s]", current->value, $2);
+          current = current->next;
+          while (current){
+              char *tmp = strdup(spec);
+              snprintf(spec, 1+strlen(current->value)+3+strlen(tmp)+1+1, "[%s x %s]", current->value, tmp);
+              current = current->next;
+          }
+          fprintf(temp_out, "%%%s0 = alloca %s\n", $4, spec);
+          insert_type(spec);
+          add('A', $4);
+          free_arr_head(ArrHead);
+          ArrHead = NULL;
+          }
+          ;
+
+variable_dec : datatype IDENT ASSIGN expression {
+             add('V', $2);
+            fprintf(temp_out, "%%%s0 = alloca %s\n", $2, $1);
+            fprintf(temp_out, "store %s %s, ptr %%%s0\n", $1, $4, $2);
+            free($4);
+            }
+
+;
+
+datatype : BYTE { $$ = "i8"; insert_type("i8"); }
+         | INT { $$ = "i32"; insert_type("i32"); }
+    ;
 
 string_dec : STRTYPE IDENT ASSIGN STR
            {
@@ -240,8 +358,11 @@ func_dec : DEF
          
          struct arg_node *node = function_table[count_function_table].head;
          while(node){
-             fprintf(temp_out, "%%%s0 = alloca %s\n", node->id, node->data_type);
-             fprintf(temp_out, "store i32 %%%s, ptr %%%s0\n", node->id, node->id);
+             printf("%s ndoes %s\n", node->data_type, node->id);
+             if (strcmp(node->data_type, "ptr") != 0){
+                 fprintf(temp_out, "%%%s0 = alloca %s\n", node->id, node->data_type);
+                 fprintf(temp_out, "store i32 %%%s, ptr %%%s0\n", node->id, node->id);
+             }
              node = node->next;
         }
             
@@ -252,11 +373,13 @@ func_dec : DEF
          }
          ;
 
-func_inp : arg_func
+func_inp : arg_func {$$ = $1; printf("%s\n", $1->data_type);}
 	| func_inp { fprintf(temp_out, ", "); } COMMA arg_func
     {
-    $1->next = $4;
-    $$ = $1;
+    //TODO repair types of variables inserted into nodes
+    $4->next = $1;
+    $$ = $4;
+    printf("%s\n", $1->data_type);
     }
 	| { }
 	;
@@ -271,15 +394,24 @@ arg_func : arg_func_datatype IDENT {
         }
         ;
 
+arg_func_datatype : BYTE { insert_type("i8"); fprintf(temp_out, "i8"); }
+                  | INT { insert_type("i32"); fprintf(temp_out, "i32"); }
+                  | ARRTYPE datatype func_arr_spec { insert_type("ptr"); fprintf(temp_out, "ptr"); }
+                  ;
 
 func_datatype : BYTE { $$ = "i8"; insert_type($$); }
 	| INT { $$ = "i32"; insert_type($$); }
+    | ARRTYPE datatype func_arr_spec 
+    {
+          insert_type("ptr");
+          $$ = "ptr";
+    }
 	;
 
 
-arg_func_datatype : BYTE { insert_type("i8"); fprintf(temp_out, "i8"); }
-	| INT { insert_type("i32"); fprintf(temp_out, "i32"); }
-	;
+
+func_arr_spec : LBRACK RBRACK
+              | func_arr_spec LBRACK RBRACK
 
 function_block : function_line 
 	| function_block function_line
@@ -337,7 +469,7 @@ value : IDENT
       int index = search($1);
       if ( index < 0){
         unknown_var($1);
-    } else {
+      } else {
       char version[512];
       itoa(symbol_table[index].version, version, 10);
       $$ = (char*)malloc(sizeof(char) * (strlen(yylval.id)+ 1 + strlen(version) + 1));
@@ -347,12 +479,73 @@ value : IDENT
           fprintf(temp_out, "%s = load %s, ptr %%%s0\n", $$, symbol_table[index].data_type, $1, $1);
           symbol_table[index].version++;
           snprintf(type, strlen(symbol_table[index].data_type)+1, symbol_table[index].data_type);
-        }
       }
       }
-	| NUMBER { $$ = yylval.id; }
+      }
+      | NUMBER { $$ = yylval.id; insert_type("i32"); }
       | function_call { $$ = newTemp(); fprintf(temp_out, "%s = %s\n", $$, $1); }
-	;
+      | access_array
+      ;
+
+access_array : IDENT array_spec
+      {
+         int index = search($1);
+         if (index >= 0){
+              struct ArrStack *current = ArrHead;
+                int len = 0;
+                while(current->next){
+                len++;
+                current = current->next;
+                }
+                current = ArrHead;
+              int i = 0;
+              while (current && i < len){
+              struct ArrStack *tmp = current;
+                while(current->next){
+                current = current->next;
+                }
+                current->next = tmp;
+              struct ArrStack *tmp1 = tmp->next;
+                tmp->next = NULL;
+                current = tmp1;
+                i++;
+                }
+              char spec[32];
+                snprintf(spec, 6+strlen(current->value)+1, ", i32 %s", current->value);
+            current = current->next;
+            while (current){
+                char *tmp = strdup(spec);
+                snprintf(spec, strlen(tmp)+6+strlen(current->value)+1, "%s, i32 %s", tmp, current->value);
+                current = current->next;
+            }
+
+char *data_type = symbol_table[index].data_type;
+             fprintf(temp_out, "%%idx%d = getelementptr %s, ptr %%%s0, i32 0%s\n", arr_access_count, data_type, $1, spec);
+             i = strlen(data_type);
+             while (i >= 0 && data_type[i] != ' '){
+                i--;
+            };
+            i++;
+            char arr_type[32];
+            int indentation = 0;
+            while (i < strlen(data_type) && data_type[i] != ']'){
+                snprintf(arr_type+indentation, 1+1, "%c", data_type[i]);
+                indentation++;
+                i++;
+                }
+
+$$ = newTemp();
+    fprintf(temp_out, "%s = load %s, ptr %%idx%d\n", $$, arr_type, arr_access_count);
+         } else{
+            unknown_var($1);
+            }
+            free_arr_head(ArrHead);
+            ArrHead = NULL;
+         arr_access_count++;
+         //TODO check if correct indexing
+         }
+ 
+
 
 function_call : CALL IDENT
               LPAREN
@@ -377,10 +570,13 @@ function_call : CALL IDENT
     {
     add('K', "len-func");
     int index = str_search($4);
+    int symb_index = search($4);
     if (index >= 0){
         char res[32];
         snprintf(res, 11+10+1, "add i32 0, %d", string_table[index].len-1);
         $$ = res;
+    } else if (symb_index >= 0){
+        
     } else{
         unknown_var($4);
     }
@@ -410,7 +606,7 @@ function_call : CALL IDENT
                         fprintf(temp_out, "%s = sext %s %s to i32\n", tmp_var, data_type, $$);
                         $$ = tmp_var;
                     }
-                     snprintf(res, 47+strlen($$)+1, "call i32 @__mingw_printf(ptr @num_str__, i32 %s)\n", $$);
+                     snprintf(res, 45+strlen($$)+2+1, "call i32 @__mingw_printf(ptr @num_str__, i32 %s)\n", $$);
                 } else{
                     unknown_var($4);
                 }
@@ -418,7 +614,7 @@ function_call : CALL IDENT
             }
             $4--;
         } else{
-             snprintf(res, 47+strlen($$)+1, "call i32 @__mingw_printf(ptr @num_str__, i32 %s)\n", $4);
+             snprintf(res, 45+strlen($4)+2+1, "call i32 @__mingw_printf(ptr @num_str__, i32 %s)\n", $4);
         }
     } else if (isdigit($4[0]) != 0){
         snprintf(res, 1+20+21+20+2+9+strlen($4)+2, "@%d = private constant [%d x i8] c\"%s\\0A\\00\"\n", temp_strCount, strlen($4)+2, $4);
@@ -453,18 +649,6 @@ arg_val : expression
         ;
 
 
-variable_dec : datatype IDENT ASSIGN expression {
-             add('V', $2);
-            fprintf(temp_out, "%%%s0 = alloca %s\n", $2, $1);
-            fprintf(temp_out, "store %s %s, ptr %%%s0\n", $1, $4, $2);
-            free($4);
-            }
-
-            ;
-
-datatype : BYTE { $$ = "i8"; insert_type("i8"); }
-	| INT { $$ = "i32"; insert_type("i32"); }
-	;
 
 
 flow_control : LOOP {
@@ -576,7 +760,7 @@ int yywrap(){
 
 int main(void) {
     FILE *fp;
-    fp = fopen("test.rog","r");
+    fp = fopen("bubble_sort.rog","r");
     yyin = fp;
     out = fopen("out.ll", "w");
     temp_out = fopen("temp_llvm.ll", "w");
@@ -651,7 +835,7 @@ void makeString(char *ident, int size, char *str){
 
 
 void insert_type(char *type_to_insert){
-    int ret = snprintf(type, 10, "%s", type_to_insert);
+    int ret = snprintf(type, 32, "%s", type_to_insert);
     if (ret < strlen(type)){
         yyerror("error inserting type");
     }
@@ -676,6 +860,7 @@ void add(char c, char *id){
         V variable
         F function dec
         I function input variable
+        A array
         */
             case 'K':
                 symbol_table[count_symbol_table].data_type = "N/A";
@@ -700,6 +885,10 @@ void add(char c, char *id){
             case 'F':
                 symbol_table[count_symbol_table].data_type = strdup(type);
                 symbol_table[count_symbol_table].symbol_type = "Funtion dec";
+                break;
+            case 'A':
+                symbol_table[count_symbol_table].data_type = strdup(type);
+                symbol_table[count_symbol_table].symbol_type = "Array";
                 break;
 
             default:
@@ -847,6 +1036,28 @@ int get_top_arg_stack(){
     return ArgHead->value;
 }
 
+
+void add_arr_stack(char *value){
+
+    struct ArrStack *new_node = (struct ArrStack*)malloc(sizeof(struct ArrStack));
+    new_node->value = value;
+    new_node->next = ArrHead;
+    ArrHead = new_node;
+
+}
+char *pop_arr_stack(){
+    struct ArrStack *tmp = ArrHead;
+    ArrHead = ArrHead->next;
+    char* value = tmp->value;
+    free_arr_head(tmp);
+    return value;
+
+}
+
+char *get_top_arr_stack(){
+    return ArrHead->value;
+}
+
 void remove_after_dot(char *string){
     int index = 0;
     while (string[index] != '.' && strlen(string) > index){
@@ -863,3 +1074,21 @@ void free_head(struct Stack* head){
         next = head->next;
     }
 }
+
+void free_arr_head(struct ArrStack* head){
+    struct ArrStack* next = head->next;
+    while (next){
+        free(head);
+        head = next;
+        next = head->next;
+    }
+}
+
+
+void print_arr_stack(){
+    struct ArrStack* current = ArrHead;
+    while (current){
+        printf("%s\n", current->value);
+        current = current->next;
+        }
+        }

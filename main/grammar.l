@@ -54,7 +54,7 @@ letter             [A-Za-z]
 "byte" { yylval.id = strdup(yytext); return BYTE; }
 "int" { yylval.id = strdup(yytext); return INT; }
 "str" { yylval.id = strdup(yytext); return STRTYPE; }
-"list" { yylval.id = strdup(yytext); return LISTTYPE; }
+"arr" { yylval.id = strdup(yytext); return ARRTYPE; }
 "len" { return LEN; }
 "print" { return PRINT; }
 

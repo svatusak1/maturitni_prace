@@ -2,6 +2,13 @@ start-ROG
 
 str zvire = "dinosaurus"
 
+arr int mysi[10][2]
+mysi[2][2] = 3
+
+int index = 2
+
+call print(mysi[index][index])
+
 func int add(int a, int b){
     return a + b
 }
