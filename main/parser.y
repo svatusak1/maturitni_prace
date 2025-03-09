@@ -1,5 +1,6 @@
-// TODO static list type
-// TODO solve why crashing when list accesing with variables
+// TODO make possible seznam[i] = seznam[i+1]
+// TODO make "string" also an expression so you can print it imediatly; call print("ahooj")
+// TODO free all the heap allocated mem (don't forget strdup)
 
 %{
 #include <stdio.h>
@@ -8,20 +9,21 @@
 #include <ctype.h>
 #include <math.h>
 
-void remove_after_dot(char* string);
+void remove_after_dot(char *string);
 void insert_str(char *strA, char *strB, int index, char *strC);
 
-void unknown_var(char *);
 
 int yylex(void);
+extern int input_file_line_no;
+
 int yyerror(const char *);
+void unknown_var(char *);
 
 extern FILE *yyin;
 FILE *temp_out;
 FILE *temp_hold;
 FILE *out;
 
-extern int input_file_line_no;
 
 int tempCounter = 0;
 char *newTemp() {
@@ -35,7 +37,7 @@ struct string {
     int len;
 }string_table[10];
 int count_str = 0;
-int str_search(char *);
+int search_str_table(char *);
 int temp_strCount = 0;
 
 int ifCounter = -1;
@@ -53,7 +55,7 @@ struct loop_range range = {"0", "0", "1"};
 
 
 char type[32];
-void add(char, char*);
+void add_symb_table(char, char*);
 struct symbolDataType {
     char *data_type;
     char *id;
@@ -65,7 +67,7 @@ int count_symbol_table = 0;
 
 void insert_type(char*);
 
-int search(char*);
+int search_symb_table(char*);
 
 
 struct arg_node {
@@ -86,8 +88,8 @@ int count_function_table = 0;
 
 struct arg_node *current_arg_node;
 
-int func_search(char *);
-char* func_ret_type;
+int search_func_table(char *);
+char *func_ret_type;
 int in_function = 0;
 
 char string_hold[1024] = "";
@@ -97,23 +99,23 @@ void assigne_types(char *func, char *types);
 
 struct Stack{
     int value;
-    struct Stack* next;
+    struct Stack *next;
 };
 
-struct Stack* IfHead = NULL;
+struct Stack *IfHead = NULL;
 
 
 void add_if_stack(int value);
 void pop_if_stack();
 int get_top_if_stack();
 
-struct Stack* ForHead = NULL;
+struct Stack *ForHead = NULL;
 
 void add_for_stack(int value);
 void pop_for_stack();
 int get_top_for_stack();
 
-struct Stack* ArgHead = NULL;
+struct Stack *ArgHead = NULL;
 
 void add_arg_stack(int value);
 int pop_arg_stack();
@@ -124,18 +126,17 @@ struct ArrStack{
     struct ArrStack *next;
 };
 
-struct ArrStack* ArrHead = NULL;
+struct ArrStack *ArrHead = NULL;
 
-void add_arr_stack(char* value);
+void add_arr_stack(char *value);
 char *pop_arr_stack();
 char *get_top_arr_stack();
-void free_arr_head(struct ArrStack* head);
+void free_arr_head(struct ArrStack *head);
 void print_arr_stack();
+char arr_type[32];
+int arr_change_version;
 
 void free_head(struct Stack*);
-
-char *array_type;
-int arr_access_count = 0;
 
 %}
 
@@ -166,11 +167,17 @@ int arr_access_count = 0;
 
 %%
 
-st : START_OF_FILE { add('K', "file_begin"); fprintf(out, "source_filename = \"Module\" \ntarget triple = \"x86_64-w64-windows-gnu\"\n\n"); }
+st : START_OF_FILE
+   {
+   add_symb_table('K', "file_begin");
+   fprintf(out, "source_filename = \"Module\" \ntarget triple = \"x86_64-w64-windows-gnu\"\n\n");
+   fprintf(out, "@newline__ = private constant [2 x i8] c\"\\0A\\00\"\n");
+   fprintf(out, "@num_str__ = private constant [4 x i8] c\"%%d\\0A\\00\"\n");
+   }
    program
-	;
+   ;
 
-program : statement program 
+program : program statement
 	| statement 
 	;
 
@@ -186,9 +193,9 @@ change : change_array
        ;
 
 
-change_array : IDENT array_spec ASSIGN expression
+change_array : IDENT array_spec
              {
-             int index = search($1);
+             int index = search_symb_table($1);
              if (index >= 0){
                   struct ArrStack *current = ArrHead;
                     int len = 0;
@@ -219,29 +226,31 @@ change_array : IDENT array_spec ASSIGN expression
                 }
                 
                  char *data_type = symbol_table[index].data_type;
-                 fprintf(temp_out, "%%idx%d = getelementptr %s, ptr %%%s0, i32 0%s\n", arr_access_count, data_type, $1, spec);
+                 fprintf(temp_out, "%%idx_%s_.%d = getelementptr %s, ptr %%%s0, i32 0%s\n", $1, symbol_table[index].version, data_type, $1, spec);
                  i = strlen(data_type);
                  while (i >= 0 && data_type[i] != ' '){
                     i--;
                 };
                 i++;
-                char arr_type[32];
                 int indentation = 0;
                 while (i < strlen(data_type) && data_type[i] != ']'){
                     snprintf(arr_type+indentation, 1+1, "%c", data_type[i]);
                     indentation++;
                     i++;
                     }
-
-                 fprintf(temp_out, "store %s %s, ptr %%idx%d\n", arr_type, $4, arr_access_count);
              } else{
                 unknown_var($1);
                 }
-            free_arr_head(ArrHead);
             ArrHead = NULL;
-            arr_access_count++;
+            arr_change_version = symbol_table[index].version;
+            symbol_table[index].version++;
+             } ASSIGN expression
+             {
+             int index = search_symb_table($1);
+             if (index >= 0){
+                 fprintf(temp_out, "store %s %s, ptr %%idx_%s_.%d\n", arr_type, $5, $1, arr_change_version);
+                }
              }
-             //TODO check if correct indexing
              ;
 
 array_spec : LBRACK expression RBRACK { add_arr_stack($2); }
@@ -256,7 +265,24 @@ declarations : func_dec
 	;
 
 
-array_dec : ARRTYPE datatype { array_type = type; } IDENT array_spec
+array_dec : ARRTYPE datatype IDENT array_spec
+          {
+// TODO declaration of list with initialization arr int seznam[100] = call bubble_sort(to_sort, 100)
+          char spec[32];
+          struct ArrStack *current = ArrHead;
+          snprintf(spec, 1+strlen($2)+3+strlen(current->value)+1+1, "[%s x %s]", current->value, $2);
+          current = current->next;
+          while (current){
+              char *tmp = strdup(spec);
+              snprintf(spec, 1+strlen(current->value)+3+strlen(tmp)+1+1, "[%s x %s]", current->value, tmp);
+              current = current->next;
+          }
+          fprintf(temp_out, "%%%s0 = alloca %s\n", $3, spec);
+          insert_type(spec);
+          add_symb_table('A', $3);
+          ArrHead = NULL;
+          }
+          | ARRTYPE datatype IDENT array_spec ASSIGN expression
           {
           char spec[32];
           struct ArrStack *current = ArrHead;
@@ -267,19 +293,19 @@ array_dec : ARRTYPE datatype { array_type = type; } IDENT array_spec
               snprintf(spec, 1+strlen(current->value)+3+strlen(tmp)+1+1, "[%s x %s]", current->value, tmp);
               current = current->next;
           }
-          fprintf(temp_out, "%%%s0 = alloca %s\n", $4, spec);
+          fprintf(temp_out, "%%%s0 = alloca %s\n", $3, spec);
+          fprintf(temp_out, "store %s %s, ptr %%%s0\n", spec, $6, $3);
           insert_type(spec);
-          add('A', $4);
-          free_arr_head(ArrHead);
+          add_symb_table('A', $3);
           ArrHead = NULL;
           }
+
           ;
 
 variable_dec : datatype IDENT ASSIGN expression {
-             add('V', $2);
+             add_symb_table('V', $2);
             fprintf(temp_out, "%%%s0 = alloca %s\n", $2, $1);
             fprintf(temp_out, "store %s %s, ptr %%%s0\n", $1, $4, $2);
-            free($4);
             }
 
 ;
@@ -292,11 +318,12 @@ string_dec : STRTYPE IDENT ASSIGN STR
            {
            int len = strlen($4)-2+1;
 
-           char *str_type = (char *)malloc(7+len+1);
-           snprintf(str_type, 7+len+1, "[%d x i8]", len);
-           insert_type(str_type);
-           add('V', $2);
-           free(str_type);
+           // char *str_type = (char *)malloc(7+len+1);
+           // snprintf(str_type, 7+len+1, "[%d x i8]", len);
+           // insert_type(str_type);
+           insert_type("str");
+           add_symb_table('V', $2);
+                // free(str_type);
 
            string_table[count_str].id = $2;
            string_table[count_str].len = len;
@@ -324,108 +351,129 @@ comment : COMMENT
 	;
 
 change_val : IDENT ASSIGN {
-           insert_type(symbol_table[search($1)].data_type);
+           insert_type(symbol_table[search_symb_table($1)].data_type);
            } expression {
            fprintf(temp_out, "store %s %s, ptr %%%s0\n", type, $4, $1);
-           free($4);
            }
            ;
 
 func_dec : DEF
          {
-         add('K', "def");
+         add_symb_table('K', "def");
          temp_hold = temp_out; temp_out = out; fprintf(temp_out, "\ndefine ");
          function_table[count_function_table].line_number = input_file_line_no;
          in_function = 1;
          }
          func_datatype
          {
-         func_ret_type = $3;
+         function_table[count_function_table].data_type = strdup($3);
+         func_ret_type = function_table[count_function_table].data_type;
          fprintf(temp_out, "%s", $3);
+         ArrHead = NULL;
          }
          IDENT LPAREN
          {
          function_table[count_function_table].id = $5;
          fprintf(temp_out, " @%s(", $5);
-         add('F', $5);
+         add_symb_table('F', $5);
          }
          func_inp RPAREN
          {
-         function_table[count_function_table].id = $5;
-         function_table[count_function_table].data_type = $3;
-         function_table[count_function_table].head = $8;
+         ArrHead = NULL;
+         
          fprintf(temp_out, "){\nentry:\n");
          
          struct arg_node *node = function_table[count_function_table].head;
          while(node){
-             printf("%s ndoes %s\n", node->data_type, node->id);
-             if (strcmp(node->data_type, "ptr") != 0){
-                 fprintf(temp_out, "%%%s0 = alloca %s\n", node->id, node->data_type);
-                 fprintf(temp_out, "store i32 %%%s, ptr %%%s0\n", node->id, node->id);
-             }
+             fprintf(temp_out, "%%%s0 = alloca %s\n", node->id, node->data_type);
+             fprintf(temp_out, "store %s %%%s, ptr %%%s0\n", node->data_type, node->id, node->id);
              node = node->next;
         }
             
          count_function_table++;
          }
-         LCURL function_block RCURL { fprintf(temp_out, "}\n\n"); temp_out = temp_hold; in_function = 0;
+         LCURL function_block RCURL
+         {
+         fprintf(temp_out, "}\n\n"); temp_out = temp_hold; in_function = 0;
          fprintf(out, string_hold);
+         snprintf(string_hold, 1, "\0");
          }
          ;
 
-func_inp : arg_func {$$ = $1; printf("%s\n", $1->data_type);}
+func_inp : arg_func {$$ = $1; function_table[count_function_table].head = $1; }
 	| func_inp { fprintf(temp_out, ", "); } COMMA arg_func
     {
-    //TODO repair types of variables inserted into nodes
-    $4->next = $1;
+    $1->next = $4;
     $$ = $4;
-    printf("%s\n", $1->data_type);
     }
 	| { }
 	;
 
-arg_func : arg_func_datatype IDENT { 
-        fprintf(temp_out, " %%%s", $2);
-        add('I', $2);
+arg_func : arg_func_datatype IDENT
+         {
+         fprintf(temp_out, " %%%s", $2);
+         add_symb_table('I', $2);
          $$ = (struct arg_node*)malloc(sizeof(struct arg_node));
          $$->id = $2;
-         $$->data_type = type;
+         $$->data_type = strdup(type);
          $$->next = NULL;
-        }
-        ;
+         }
+         | arg_func_datatype IDENT array_spec 
+         {
+          char spec[32];
+          struct ArrStack *current = ArrHead;
+          snprintf(spec, 1+strlen($2)+3+strlen(current->value)+1+1, "[%s x %s]", current->value, type);
+          current = current->next;
+          while (current){
+              char *tmp = strdup(spec);
+              snprintf(spec, 1+strlen(current->value)+3+strlen(tmp)+1+1, "[%s x %s]", current->value, tmp);
+              current = current->next;
+          }
+         fprintf(temp_out, "%s %%%s", spec, $2);
+         insert_type(spec);
+         add_symb_table('I', $2);
+         $$ = (struct arg_node*)malloc(sizeof(struct arg_node));
+         $$->id = $2;
+         $$->data_type = strdup(type);
+         $$->next = NULL;
+         }
+         ;
 
 arg_func_datatype : BYTE { insert_type("i8"); fprintf(temp_out, "i8"); }
                   | INT { insert_type("i32"); fprintf(temp_out, "i32"); }
-                  | ARRTYPE datatype func_arr_spec { insert_type("ptr"); fprintf(temp_out, "ptr"); }
+                  | ARRTYPE datatype
                   ;
 
 func_datatype : BYTE { $$ = "i8"; insert_type($$); }
 	| INT { $$ = "i32"; insert_type($$); }
-    | ARRTYPE datatype func_arr_spec 
+    | ARRTYPE datatype array_spec 
     {
-          insert_type("ptr");
-          $$ = "ptr";
+          char spec[32];
+          struct ArrStack *current = ArrHead;
+          snprintf(spec, 1+strlen($2)+3+strlen(current->value)+1+1, "[%s x %s]", current->value, type);
+          current = current->next;
+          while (current){
+              char *tmp = strdup(spec);
+              snprintf(spec, 1+strlen(current->value)+3+strlen(tmp)+1+1, "[%s x %s]", current->value, tmp);
+              current = current->next;
+          }
+          insert_type(spec);
+          $$ = spec;
     }
 	;
-
-
-
-func_arr_spec : LBRACK RBRACK
-              | func_arr_spec LBRACK RBRACK
 
 function_block : function_line 
 	| function_block function_line
 	;
 
 function_line : statement 
-	| return { fprintf(temp_out, "\n"); }
+	| return
 	;
 
 return : RTRN expression
        {
-       add('K', "return"); 
-       fprintf(temp_out, "ret %s %s", func_ret_type, $2);
-       free($2);
+       add_symb_table('K', "return"); 
+       fprintf(temp_out, "ret %s %s\n", func_ret_type, $2);
        }
        ;
 
@@ -434,62 +482,55 @@ expression : expression PLUS expression
            {
            $$ = newTemp(); fprintf(temp_out, "%s = add %s %s, %s\n", $$, type, $1, $3);
            range.start_type = type;
-           free($1);
-           free($3);
            }
 	       
 		   | expression MINUS expression
 	       {
 	       $$ = newTemp(); fprintf(temp_out, "%s = sub %s %s, %s\n", $$, type, $1, $3); range.start_type = type;
-           free($1);
-           free($3);
 	       }
 	       
 		   | expression TIMES expression
 	       {
 	       $$ = newTemp(); fprintf(temp_out, "%s = mul %s %s, %s\n", $$, type, $1, $3); range.start_type = type;
-           free($1);
-           free($3);
 	       }
 	       
 		   | expression DIVIDE expression
 	       {
 	       $$ = newTemp(); fprintf(temp_out, "%s = udiv %s %s, %s\n", $$, type, $1, $3); range.start_type = type;
-           free($1);
-           free($3);
            }
 	       
 		   | LPAREN expression RPAREN { $$ = $2; }
            
 		   | value { $$ = $1; range.start_type = type; }
+           | function_call { $$ = newTemp(); fprintf(temp_out, "%s = %s\n", $$, $1); }
+           | access_array
 	       ;
 
 value : IDENT
       {
-      int index = search($1);
+      int index = search_symb_table($1);
       if ( index < 0){
         unknown_var($1);
       } else {
-      char version[512];
-      itoa(symbol_table[index].version, version, 10);
-      $$ = (char*)malloc(sizeof(char) * (strlen(yylval.id)+ 1 + strlen(version) + 1));
-      snprintf($$, 1+strlen(yylval.id)+1+strlen(version)+1, "%%%s.%s", yylval.id, version);
-      int str_index = str_search($1);
-      if (str_index < 0){
-          fprintf(temp_out, "%s = load %s, ptr %%%s0\n", $$, symbol_table[index].data_type, $1, $1);
-          symbol_table[index].version++;
-          snprintf(type, strlen(symbol_table[index].data_type)+1, symbol_table[index].data_type);
+          char version[512];
+          itoa(symbol_table[index].version, version, 10);
+          $$ = (char*)malloc(sizeof(char) * (strlen(yylval.id)+ 1 + strlen(version) + 1));
+          snprintf($$, 1+strlen(yylval.id)+1+strlen(version)+1, "%%%s.%s", yylval.id, version);
+          int str_index = search_str_table($1);
+          if (str_index < 0){
+              fprintf(temp_out, "%s = load %s, ptr %%%s0\n", $$, symbol_table[index].data_type, $1, $1);
+              symbol_table[index].version++;
+              snprintf(type, strlen(symbol_table[index].data_type)+1, symbol_table[index].data_type);
+          }
       }
-      }
+
       }
       | NUMBER { $$ = yylval.id; insert_type("i32"); }
-      | function_call { $$ = newTemp(); fprintf(temp_out, "%s = %s\n", $$, $1); }
-      | access_array
       ;
 
 access_array : IDENT array_spec
       {
-         int index = search($1);
+         int index = search_symb_table($1);
          if (index >= 0){
               struct ArrStack *current = ArrHead;
                 int len = 0;
@@ -520,7 +561,7 @@ access_array : IDENT array_spec
             }
 
 char *data_type = symbol_table[index].data_type;
-             fprintf(temp_out, "%%idx%d = getelementptr %s, ptr %%%s0, i32 0%s\n", arr_access_count, data_type, $1, spec);
+             fprintf(temp_out, "%%idx_%s_.%d = getelementptr %s, ptr %%%s0, i32 0%s\n", $1, symbol_table[index].version, data_type, $1, spec);
              i = strlen(data_type);
              while (i >= 0 && data_type[i] != ' '){
                 i--;
@@ -535,13 +576,12 @@ char *data_type = symbol_table[index].data_type;
                 }
 
 $$ = newTemp();
-    fprintf(temp_out, "%s = load %s, ptr %%idx%d\n", $$, arr_type, arr_access_count);
+    fprintf(temp_out, "%s = load %s, ptr %%idx_%s_.%d\n", $$, arr_type, $1, symbol_table[index].version);
          } else{
             unknown_var($1);
             }
-            free_arr_head(ArrHead);
             ArrHead = NULL;
-         arr_access_count++;
+         symbol_table[index].version++;
          //TODO check if correct indexing
          }
  
@@ -552,25 +592,26 @@ function_call : CALL IDENT
               arg_val RPAREN 
               {
               assigne_types($2, $4);
-              add('K', "call");
-              int index = search($2);
-              char *func_ret_type;
+              add_symb_table('K', "call");
+              int index = search_symb_table($2);
+              char *func_ret_type_tmp;
               if (index >=0){
-                  func_ret_type = symbol_table[index].data_type; 
-              }
-              if (!func_ret_type){
-                    yyerror("variable not declared");
+                  func_ret_type_tmp = symbol_table[index].data_type; 
+                  insert_type(func_ret_type);
+                  // TODO get rid of malloca and set the $$ type to char[]
+                  $$ = (char*)malloc((5+strlen(func_ret_type_tmp)+2+strlen($2)+1+strlen($4)+1+1)*sizeof(char));
+                  snprintf($$, 5+strlen(func_ret_type_tmp)+2+strlen($2)+1+strlen($4)+1+1, "call %s @%s(%s)", func_ret_type_tmp, $2, $4);
+              } else {
+                    yyerror("Function not declared");
                 }
-              $$ = (char*)malloc((5+strlen(func_ret_type)+2+strlen($2)+1+strlen($4)+1+1)*sizeof(char));
-              snprintf($$, 5+strlen(func_ret_type)+2+strlen($2)+1+strlen($4)+1+1, "call %s @%s(%s)", func_ret_type, $2, $4);
               pop_arg_stack();
             }
 
 	| CALL LEN LPAREN IDENT RPAREN
     {
-    add('K', "len-func");
-    int index = str_search($4);
-    int symb_index = search($4);
+    add_symb_table('K', "len-func");
+    int index = search_str_table($4);
+    int symb_index = search_symb_table($4);
     if (index >= 0){
         char res[32];
         snprintf(res, 11+10+1, "add i32 0, %d", string_table[index].len-1);
@@ -593,10 +634,10 @@ function_call : CALL IDENT
             $4[i] = '\0';
             $4++;
 
-            if (str_search($4) >= 0){
+            if (search_str_table($4) >= 0){
                 snprintf(res, 30+strlen($4)+45+1, "call i32 @__mingw_printf(ptr @%s)\ncall i32 @__mingw_printf(ptr @newline__)\n", $4);
             } else{
-                int index = search($4);
+                int index = search_symb_table($4);
                 if (index >= 0){
                     char *data_type = symbol_table[index].data_type;
                      $$ = newTemp();
@@ -627,7 +668,6 @@ function_call : CALL IDENT
         temp_strCount++;
     }
     $$ = res;
-    free($4);
     }
 	;
 
@@ -635,7 +675,6 @@ arg_val : expression
         {
             snprintf($$, 1 + strlen($1)+1, " %s", $1);
             add_arg_stack(strlen($1)+1);
-            free($1);
         }
         | arg_val COMMA expression
         {
@@ -643,7 +682,6 @@ arg_val : expression
         int len = 2+strlen($3)+1;
         snprintf($$+arg_len, len, ", %s", $3);
         add_arg_stack(arg_len+len-1);
-        free($3);
         }
         | {}
         ;
@@ -654,24 +692,24 @@ arg_val : expression
 flow_control : LOOP {
              loopCounter++;
              add_for_stack(loopCounter);
-             fprintf(temp_out, "\nbr label %%entry_loop%d\n", get_top_for_stack());
+             fprintf(temp_out, "br label %%entry_loop%d\n\n", get_top_for_stack());
              fprintf(temp_out, "entry_loop%d:\n", get_top_for_stack());
-             add('K', "loop");
+             add_symb_table('K', "loop");
              }
              LPAREN datatype IDENT
              SEMICOL range RPAREN
 {
     fprintf(temp_out, "%%%s0 = alloca %s\n", $5, type);
-    add('V', $5);
+    add_symb_table('V', $5);
     fprintf(temp_out, "store %s %s, ptr %%%s0\n", type, range.start, $5);
-    fprintf(temp_out, "%%loop_var_comp__ = load %s, ptr %%%s0\n", type, $5);
+    fprintf(temp_out, "%%loop_var_comp%d__ = load %s, ptr %%%s0\n", get_top_for_stack(), type, $5);
     fprintf(temp_out, "%%max%d = add i32 0, %s\n", get_top_for_stack(), range.end);
-    fprintf(temp_out, "%%condition_for%d = icmp sgt %s %%max%d, %%loop_var_comp__\n", get_top_for_stack(), type, get_top_for_stack());
-    fprintf(temp_out, "br label %%loop_start%d\n", get_top_for_stack());
+    fprintf(temp_out, "%%condition_for%d = icmp sgt %s %%max%d, %%loop_var_comp%d__\n", get_top_for_stack(), type, get_top_for_stack(), get_top_for_stack());
+    fprintf(temp_out, "br label %%loop_start%d\n\n", get_top_for_stack());
 
     fprintf(temp_out, "loop_start%d:\n", get_top_for_stack());
     fprintf(temp_out, "%%i.check%d = load %s, ptr %%%s0\n", get_top_for_stack(), type, $5);
-    fprintf(temp_out, "br i1 %%condition_for%d, label %%sgt1%d__, label %%slt1%d__\n", get_top_for_stack(), get_top_for_stack(), get_top_for_stack());
+    fprintf(temp_out, "br i1 %%condition_for%d, label %%sgt1%d__, label %%slt1%d__\n\n", get_top_for_stack(), get_top_for_stack(), get_top_for_stack());
 
     fprintf(temp_out, "sgt1%d__:\n", get_top_for_stack());
     fprintf(temp_out, "%%done_sgt%d = icmp sgt i32 %%i.check%d, %%max%d\n", get_top_for_stack(), get_top_for_stack(), get_top_for_stack());
@@ -679,24 +717,24 @@ flow_control : LOOP {
 
     fprintf(temp_out, "slt1%d__:\n", get_top_for_stack());
     fprintf(temp_out, "%%done_slt%d = icmp slt i32 %%i.check%d, %%max%d\n", get_top_for_stack(), get_top_for_stack(), get_top_for_stack());
-    fprintf(temp_out, "br i1 %%done_slt%d, label %%continue_loop%d, label %%loop%d\n", get_top_for_stack(), get_top_for_stack(), get_top_for_stack());
+    fprintf(temp_out, "br i1 %%done_slt%d, label %%continue_loop%d, label %%loop%d\n\n", get_top_for_stack(), get_top_for_stack(), get_top_for_stack());
 
     fprintf(temp_out, "loop%d:\n", get_top_for_stack());
 }
              block
              {
              fprintf(temp_out, "\n%%loop_var%d__ = load i32, ptr %%%s0\n", get_top_for_stack(), $5);
-             fprintf(temp_out, "br i1 %%condition_for%d, label %%sgt2%d__, label %%slt2%d__\n", get_top_for_stack(), get_top_for_stack(), get_top_for_stack());
+             fprintf(temp_out, "br i1 %%condition_for%d, label %%sgt2%d__, label %%slt2%d__\n\n", get_top_for_stack(), get_top_for_stack(), get_top_for_stack());
              
              fprintf(temp_out, "sgt2%d__:\n", get_top_for_stack());
              fprintf(temp_out, "%%new_loop_var_sgt%d__ = add i32 %s, %%loop_var%d__\n", get_top_for_stack(), range.step, get_top_for_stack());
-             fprintf(temp_out, "store i32 %%new_loop_var_sgt%d__, ptr %%%s0\n\n", get_top_for_stack(), $5);
+             fprintf(temp_out, "store i32 %%new_loop_var_sgt%d__, ptr %%%s0\n", get_top_for_stack(), $5);
              fprintf(temp_out, "br label %%loop_start%d\n", get_top_for_stack());
 
              fprintf(temp_out, "slt2%d__:\n", get_top_for_stack());
              fprintf(temp_out, "%%new_loop_var_slt%d__ = add i32 -%s, %%loop_var%d__\n", get_top_for_stack(), range.step, get_top_for_stack());
-             fprintf(temp_out, "store i32 %%new_loop_var_slt%d__, ptr %%%s0\n\n", get_top_for_stack(), $5);
-             fprintf(temp_out, "br label %%loop_start%d\n", get_top_for_stack());
+             fprintf(temp_out, "store i32 %%new_loop_var_slt%d__, ptr %%%s0\n", get_top_for_stack(), $5);
+             fprintf(temp_out, "br label %%loop_start%d\n\n", get_top_for_stack());
 
              fprintf(temp_out, "continue_loop%d:\n\n", get_top_for_stack());
              pop_for_stack();
@@ -704,12 +742,12 @@ flow_control : LOOP {
 	| IF LPAREN
     {
     ifCounter ++;
-    add('K', "if");
+    add_symb_table('K', "if");
     add_if_stack(ifCounter);
     }
     condition RPAREN
     {
-    fprintf(temp_out, "br i1 %%condition%d, label %%if%d, label %%continue_if%d\nif%d:\n", get_top_if_stack(), get_top_if_stack(), get_top_if_stack(), get_top_if_stack());
+    fprintf(temp_out, "br i1 %%condition_if%d, label %%if%d, label %%continue_if%d\nif%d:\n", get_top_if_stack(), get_top_if_stack(), get_top_if_stack(), get_top_if_stack());
     }
     block
     { fprintf(temp_out, "br label %%continue_if%d\ncontinue_if%d:\n\n", get_top_if_stack(), get_top_if_stack()); 
@@ -717,8 +755,8 @@ flow_control : LOOP {
     }
     ;
 
-range : expression TO expression { range.start = $1; range.end = $3; range.end_type = type; free($1); free($3); }
-      | expression TO expression SEMICOL step { range.start = $1; range.end = $3; range.step = $5; free($1); free($3); }
+range : expression TO expression { range.start = $1; range.end = $3; range.end_type = type; range.step = "1"; }
+      | expression TO expression SEMICOL step { range.start = $1; range.end = $3; range.step = $5; }
       ;
 
 step : expression
@@ -732,7 +770,7 @@ step : expression
 
 condition : expression comp expression
           {
-          fprintf(temp_out, "%%condition%d = icmp %s i32 %s, %s\n", get_top_if_stack(), $2, $1, $3);
+          fprintf(temp_out, "%%condition_if%d = icmp %s i32 %s, %s\n", get_top_if_stack(), $2, $1, $3);
           }
           ;
 
@@ -766,8 +804,6 @@ int main(void) {
     temp_out = fopen("temp_llvm.ll", "w");
     yyparse();
 
-    fprintf(out, "@newline__ = private constant [2 x i8] c\"\\0A\\00\"\n");
-    fprintf(out, "@num_str__ = private constant [4 x i8] c\"%%d\\0A\\00\"\n");
     fprintf(out, "\ndefine i32 @main() {\nentry:\n");
 
     fclose(fp);
@@ -827,11 +863,6 @@ int main(void) {
 
 }
 
-void makeString(char *ident, int size, char *str){
-
-    fprintf(out, "@%s = internal constant [%d x i8] c%s\n", ident, size, str);
-
-}
 
 
 void insert_type(char *type_to_insert){
@@ -842,11 +873,13 @@ void insert_type(char *type_to_insert){
 }
 
 
-void add(char c, char *id){
+void add_symb_table(char c, char *id){
     
-    int found = search(id);
+    int found;
     if (c == 'K'){
         found = -1;
+    } else {
+        found = search_symb_table(id);
     }
 
     if (found == -1){
@@ -895,17 +928,24 @@ void add(char c, char *id){
                 yyerror("symbol not found");
         }
         count_symbol_table++;
+    } else {
+        char name[9];
+        switch (c){
+            case 'V':
+                snprintf(name, 8+1, "variable");
+                break;
+            case 'F':
+                snprintf(name, 8+1, "function");
+            case 'A':
+                snprintf(name, 5+1, "array");
+        }
+        char final[8+45+1];
+        snprintf(final, 8+45+1, "Multiple %s declarations aren't allowed", name);
+        yyerror(final);
     }
-    if (found >= 0 && c == 'V'){
-        yyerror("Multiple variable declarations aren't allowed");
-    }
-    if (found >= 0 && c == 'F'){
-        yyerror("Multiple fucntion declarations aren't allowed");
-    }
-
 }
 
-int search(char *id){
+int search_symb_table(char *id){
     int i;
     for (i = count_symbol_table-1; i>= 0; i--){
         if (strcmp(symbol_table[i].id, id) == 0){
@@ -916,7 +956,7 @@ int search(char *id){
 }
 
 
-int func_search(char *id){
+int search_func_table(char *id){
     int i;
     for (i = count_function_table-1; i>= 0; i--){
         if (strcmp(function_table[i].id, id) == 0){
@@ -933,7 +973,7 @@ void unknown_var(char *id){
 }
 
 
-int str_search(char *id){
+int search_str_table(char *id){
     int i;
     for (i = count_str-1; i>= 0; i--){
         if (strcmp(string_table[i].id, id) == 0){
@@ -954,7 +994,7 @@ void insert_str(char *strA, char *strB, int index, char *strC){
 }
 
 void assigne_types(char *func, char *types){
-    int index = func_search(func);
+    int index = search_func_table(func);
     if (index < 0){
         yyerror("function not declared");
     } else{
@@ -1048,7 +1088,7 @@ void add_arr_stack(char *value){
 char *pop_arr_stack(){
     struct ArrStack *tmp = ArrHead;
     ArrHead = ArrHead->next;
-    char* value = tmp->value;
+    char *value = tmp->value;
     free_arr_head(tmp);
     return value;
 
@@ -1066,8 +1106,8 @@ void remove_after_dot(char *string){
     string[index] = '\0';
 }
 
-void free_head(struct Stack* head){
-    struct Stack* next = head->next;
+void free_head(struct Stack *head){
+    struct Stack *next = head->next;
     while (next){
         free(head);
         head = next;
@@ -1075,8 +1115,8 @@ void free_head(struct Stack* head){
     }
 }
 
-void free_arr_head(struct ArrStack* head){
-    struct ArrStack* next = head->next;
+void free_arr_head(struct ArrStack *head){
+    struct ArrStack *next = head->next;
     while (next){
         free(head);
         head = next;
@@ -1086,7 +1126,7 @@ void free_arr_head(struct ArrStack* head){
 
 
 void print_arr_stack(){
-    struct ArrStack* current = ArrHead;
+    struct ArrStack *current = ArrHead;
     while (current){
         printf("%s\n", current->value);
         current = current->next;

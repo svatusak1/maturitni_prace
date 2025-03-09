@@ -1,32 +1,10 @@
 start-ROG
-
 str zvire = "dinosaurus"
 
-arr int mysi[10][2]
-mysi[2][2] = 3
-
-int index = 2
-
-call print(mysi[index][index])
-
-func int add(int a, int b){
-    return a + b
+arr int mysi[100]
+loop(int p; 100->1){
+    mysi[100-p] = p
 }
-
-func int multiply(int c, int d){
-    return c * d
-}
-
-int x = 2
-
-x = x+4
-## x = call add(4, 5) * call add(2, 2)
-
-## call print(x)
-## call print(9)
-
-## call print(zvire)
-
-loop (int loop_var; x->0; -1){
-    call print(loop_var)
+loop(int h; 0->99){
+    call print(mysi[h])
 }

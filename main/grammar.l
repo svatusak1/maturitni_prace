@@ -17,9 +17,10 @@ letter             [A-Za-z]
 ##[^[].* {  return COMMENT; } 
 
     /*.identify multiline comments */
-"##[[" { BEGIN COMMENTSTATE; return MULTICOMMENT; }
+"##[[" { BEGIN COMMENTSTATE; }
 
-<COMMENTSTATE>"]]##" { BEGIN INITIAL; printf("zkoncil komentar\n"); }
+<COMMENTSTATE>"]]##" { BEGIN INITIAL; return MULTICOMMENT; }
+<COMMENTSTATE>.* { }
 
 
 "start-ROG" { return START_OF_FILE;  }
@@ -70,3 +71,4 @@ whitespace
 
     /* read in strings */ 
 \"[^"]*\" { yylval.id = strdup(yytext); return STR; }
+

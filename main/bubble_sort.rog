@@ -1,7 +1,35 @@
 start-ROG
-func arr int[] bubble_sort(arr int[] seznam, int len_seznam, int jak)
+func arr int[100] bubble_sort(arr int seznam[100], int len_seznam)
 {
-##TODO  pridat boolean jestli se vubec nejake cislo presunulo - nutno vyskocit z loopu
     int to_max = len_seznam
 
+    loop (int k; 0 -> len_seznam - 1)
+    {
+        loop (int i; 0 -> to_max - 2)
+        {
+            if ( seznam[i] > seznam[i+1] )
+            {
+                int temp = seznam[i]
+                seznam[i] = seznam[i+1]
+                seznam[i+1] = temp
+            }
+        }
+        to_max = to_max - 1
+    }
+    return seznam
+}
+
+arr int mysi[100]
+loop(int p; 100->1){
+    mysi[100-p] = p
+}
+
+loop(int q; 0->99){
+    call print(mysi[q])
+}
+
+mysi = call bubble_sort(mysi, 100)
+
+loop(int t; 0->99){
+    call print(mysi[t])
 }
