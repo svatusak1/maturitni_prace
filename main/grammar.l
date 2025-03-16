@@ -4,7 +4,7 @@ letter             [A-Za-z]
 
 %{
 #include <string.h>
-#include "y.tab.h"
+#include "parser.tab.h"
 
     int input_file_line_no = 1;
 %}
@@ -49,6 +49,7 @@ letter             [A-Za-z]
 
 "call" { return CALL; }
 "func" { return DEF; }
+"void" { return VOID; }
 "return" { return RTRN; }
 "loop" { return LOOP; }
 "if" { return IF; }

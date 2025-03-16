@@ -1,4 +1,4 @@
-bison -vdy parser.y
+bison -d parser.y
 flex grammar.l
-gcc y.tab.c lex.yy.c
+clang lex.yy.c parser.tab.c
 a.exe

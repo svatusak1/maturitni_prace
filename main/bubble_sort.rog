@@ -1,11 +1,12 @@
 start-ROG
-func arr int[100] bubble_sort(arr int seznam[100], int len_seznam)
+
+func arr int[10] bubble_sort(arr int seznam[10], int len_seznam)
 {
     int to_max = len_seznam
 
-    loop (int k; 0 -> len_seznam - 1)
+    loop (int k; 0 -> len_seznam - 2)
     {
-        loop (int i; 0 -> to_max - 2)
+        loop (int i; 0 -> to_max - k - 2)
         {
             if ( seznam[i] > seznam[i+1] )
             {
@@ -14,22 +15,40 @@ func arr int[100] bubble_sort(arr int seznam[100], int len_seznam)
                 seznam[i+1] = temp
             }
         }
-        to_max = to_max - 1
     }
     return seznam
 }
 
-arr int mysi[100]
-loop(int p; 100->1){
-    mysi[100-p] = p
+func void test(){
+    arr int test_seznam[10]
+    loop(int p; 10->1; -1){
+        test_seznam[10-p] = p
+    }
+
+    test_seznam[5] = 17
+    test_seznam[6] = -1
+
+    loop(int q; 0->9){
+        call print(test_seznam[q])
+    }
+
+    call print()
+
+    test_seznam = call bubble_sort(test_seznam, 10)
+
+    arr int druhej[10] = test_seznam
+
+    loop(int t; 0->9){
+        call print(test_seznam[t])
+    }
 }
 
-loop(int q; 0->99){
-    call print(mysi[q])
+call test()
+
+loop(int pokoj; 10->-10; -3){
+    call print(pokoj)
 }
 
-mysi = call bubble_sort(mysi, 100)
-
-loop(int t; 0->99){
-    call print(mysi[t])
+if (1 > 2){
+    call print("hm")
 }

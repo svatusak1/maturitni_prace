@@ -12,3 +12,5 @@ Knihy:
 
 internetové stránky:
     How to Build a C Compiler Using Lex and Yacc. Online. Medium. 2018. Dostupné z: https://medium.com/codex/building-a-c-compiler-using-lex-and-yacc-446262056aaa. [cit. 2024-12-30].
+
+https://stackoverflow.com/a/2016015
