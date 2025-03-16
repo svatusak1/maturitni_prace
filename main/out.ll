@@ -128,7 +128,7 @@ ret [10 x i32] %seznam.6
 }
 
 
-define void @test(){
+define i32 @main() {
 entry:
 %test_seznam0 = alloca [10 x i32]
 br label %entry_loop3
@@ -268,79 +268,6 @@ store i32 %new_loop_var_slt5__, ptr %t0
 br label %loop_start5
 
 continue_loop5:
-
-ret void
-}
-
-@delka = private constant [6 x i8] c"abcde\00"
-@dino = private constant [10 x i8] c"stegosaur\00"
-@kamo = private constant [5 x i8] c"kamo\00"
-
-define i32 @main() {
-entry:
-%t17 = call [10 x i32] @test()
-br label %entry_loop6
-
-entry_loop6:
-%pokoj0 = alloca i32
-store i32 10, ptr %pokoj0
-%loop_var_comp6__ = load i32, ptr %pokoj0
-%max6 = add i32 0, -10
-%condition_for6 = icmp sgt i32 %max6, %loop_var_comp6__
-br label %loop_start6
-
-loop_start6:
-%i.check6 = load i32, ptr %pokoj0
-br i1 %condition_for6, label %sgt16__, label %slt16__
-
-sgt16__:
-%done_sgt6 = icmp sgt i32 %i.check6, %max6
-br i1 %done_sgt6, label %continue_loop6, label %loop6
-slt16__:
-%done_slt6 = icmp slt i32 %i.check6, %max6
-br i1 %done_slt6, label %continue_loop6, label %loop6
-
-loop6:
-%pokoj.0 = load i32, ptr %pokoj0
-%t18 = call i32 @__mingw_printf(ptr @num_str__, i32 %pokoj.0)
-
-
-%loop_var6__ = load i32, ptr %pokoj0
-br i1 %condition_for6, label %sgt26__, label %slt26__
-
-sgt26__:
-%new_loop_var_sgt6__ = add i32 %loop_var6__, 3
-store i32 %new_loop_var_sgt6__, ptr %pokoj0
-br label %loop_start6
-slt26__:
-%new_loop_var_slt6__ = sub i32 %loop_var6__, 3
-store i32 %new_loop_var_slt6__, ptr %pokoj0
-br label %loop_start6
-
-continue_loop6:
-
-%t19 = call i32 @__mingw_printf(ptr @dino)
-call i32 @__mingw_printf(ptr @newline__)
-
-%t20 = add i32 0, 5
-%t21 = call i32 @__mingw_printf(ptr @num_str__, i32 %t20)
-
-%t22 = call i32 @__mingw_printf(ptr @delka)
-call i32 @__mingw_printf(ptr @newline__)
-
-%c0 = alloca i32
-store i32 0, ptr %c0
-%c.0 = load i32, ptr %c0
-%t23 = call i32 @__mingw_printf(ptr @num_str__, i32 %c.0)
-
-%t24 = call i32 @__mingw_printf(ptr @kamo)
-call i32 @__mingw_printf(ptr @newline__)
-
-%op0 = alloca i8
-store i8 10, ptr %op0
-%op.0 = load i8, ptr %op0
-%t25 = sext i8 %op.0 to i32
-%t26 = call i32 @__mingw_printf(ptr @num_str__, i32 %t25)
 
 ret i32 0
 }
