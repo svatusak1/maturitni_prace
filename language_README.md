@@ -43,13 +43,10 @@ following types are available:
     int - 16 bits -> −32767, +32767
     string - space allocated according to the length - immutable
         str car = "audi" 
-{
-right now cannot actualy be used for anything more or less :)
-}
 
 {
-    capacity() is used to determine the length of a list
-    len() is used to get number of elements in list and the length of a string
+    call len() is used to get the length of a string
+    call print() is used to print someting
 }
 
 global variables can't be acceced in functions (strings can be acceced anywhere)
@@ -76,7 +73,6 @@ comparing operators available:
     != does not equal
 
     applicable only between variables of the same type
-
 ------------------------------------------------------------------------------
 FLOW CONTROL
 

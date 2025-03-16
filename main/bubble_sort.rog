@@ -49,6 +49,14 @@ loop(int pokoj; 10->-10; -3){
     call print(pokoj)
 }
 
-if (1 > 2){
-    call print("hm")
-}
+str delka = "abcde"
+str dino = "stegosaur"
+call print(dino)
+call print(call len(delka))
+call print(delka)
+int c = 0
+call print(c)
+str kamo = "kamo"
+call print(kamo)
+byte op = 10
+call print(op)

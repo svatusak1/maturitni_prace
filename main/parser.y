@@ -7,9 +7,12 @@
 
 void remove_after_dot(char *string);
 void insert_str(char *original_string, char *str_to_insert, int index, char *result_string);
+int digit_length(int number);
 
 int yylex(void);
 extern int input_file_line_no;
+
+void print_tables();
 
 int yyerror(const char *);
 void unknown_var(char *);
@@ -19,27 +22,17 @@ FILE *temp_out;
 FILE *temp_hold;
 FILE *out;
 
-void print_tables();
 
 
 int tempCounter = 0;
-char *newTemp() {
+char *new_temp_var() {
     char *temp = (char*)malloc(16*sizeof(char));
     sprintf(temp, "%%t%d", tempCounter++);
     return temp;
 }
 int is_temp_var(char *variable);
 
-struct string {
-    char *id;
-    int len;
-}string_table[10];
-int count_str = 0;
-int search_str_table(char *);
-int temp_strCount = 0;
-
-
-
+// Symbol table
 char type[32];
 void add_symb_table(char, char*);
 struct symbolDataType {
@@ -54,6 +47,12 @@ int count_symbol_table = 0;
 void insert_type(char*);
 
 int search_symb_table(char*);
+
+// Strings
+int temp_strCount = 0;
+int get_str_len(char *name);
+int string_exists(char *name);
+
 
 
 // function structures
@@ -279,17 +278,7 @@ string_dec : STRTYPE IDENT ASSIGN STR
            $4[strlen($4)-1] = '\0';
            int length_of_str = strlen($4);
 
-           string_table[count_str].id = $2;
-           string_table[count_str].len = length_of_str-1;
-           count_str++;
-
-           int digit_len_of_length_str = 0;
-
-           int tmp = length_of_str;
-           while(tmp > 0){
-            digit_len_of_length_str ++;
-            tmp/=10;
-            }
+           int digit_len_of_length_str = digit_length(length_of_str);
 
            char *str_type = (char*)malloc(1+digit_len_of_length_str+6+1);
            sprintf(str_type, "[%d x i8]", length_of_str);
@@ -426,25 +415,25 @@ return : RTRN expression
 
 expression : expression PLUS expression
            {
-           $$ = newTemp(); fprintf(temp_out, "%s = add %s %s, %s\n", $$, type, $1, $3);
+           $$ = new_temp_var(); fprintf(temp_out, "%s = add %s %s, %s\n", $$, type, $1, $3);
            free($1); free($3);
            }
 	       
 		   | expression MINUS expression
 	       {
-	       $$ = newTemp(); fprintf(temp_out, "%s = sub %s %s, %s\n", $$, type, $1, $3);
+	       $$ = new_temp_var(); fprintf(temp_out, "%s = sub %s %s, %s\n", $$, type, $1, $3);
            free($1); free($3);
 	       }
 	       
 		   | expression TIMES expression
 	       {
-	       $$ = newTemp(); fprintf(temp_out, "%s = mul %s %s, %s\n", $$, type, $1, $3);
+	       $$ = new_temp_var(); fprintf(temp_out, "%s = mul %s %s, %s\n", $$, type, $1, $3);
            free($1); free($3);
 	       }
 	       
 		   | expression DIVIDE expression
 	       {
-	       $$ = newTemp(); fprintf(temp_out, "%s = udiv %s %s, %s\n", $$, type, $1, $3);
+	       $$ = new_temp_var(); fprintf(temp_out, "%s = udiv %s %s, %s\n", $$, type, $1, $3);
            free($1); free($3);
            }
 	       
@@ -453,7 +442,7 @@ expression : expression PLUS expression
 		   | value
            | function_call
            {
-           $$ = newTemp(); fprintf(temp_out, "%s = %s\n", $$, $1);
+           $$ = new_temp_var(); fprintf(temp_out, "%s = %s\n", $$, $1);
            free($1);
            }
            | access_array
@@ -465,16 +454,10 @@ value : IDENT
       if (index >= 0){
           insert_type(symbol_table[index].data_type);
           int version = symbol_table[index].version;
-          int digit_len_of_version = 0;
-          int tmp = version;
-          while(tmp > 0){
-            digit_len_of_version++;
-            tmp/=10;
-          }
+          int digit_len_of_version = digit_length(version);
           $$ = (char*)malloc(1+strlen($1)+ 1 + digit_len_of_version + 1);
           sprintf($$, "%%%s.%d", $1, version);
-          int str_index = search_str_table($1);
-          if (str_index < 0){
+          if (string_exists($1) == 0){
               fprintf(temp_out, "%s = load %s, ptr %%%s0\n", $$, symbol_table[index].data_type, $1);
               symbol_table[index].version++;
               sprintf(type, "%s", symbol_table[index].data_type);
@@ -492,7 +475,7 @@ value : IDENT
 
 access_array : IDENT array_spec
       {
-         $$ = newTemp();
+         $$ = new_temp_var();
          int index = search_symb_table($1);
          if (index >= 0){
             reverse_order_array_stack(ArrHead);
@@ -536,16 +519,12 @@ function_call : CALL IDENT
 	| CALL LEN LPAREN IDENT RPAREN
     {
     add_symb_table('K', "len-func");
-    int index = search_str_table($4);
-    int symb_index = search_symb_table($4);
+    int index = search_symb_table($4);
     char *res;
     if (index >= 0){
         res = (char*)malloc(11+10+1);
-        sprintf(res, "add i32 0, %d", string_table[index].len);
+        sprintf(res, "add i32 0, %d", get_str_len($4));
         $$ = res;
-    } else if (symb_index >= 0){
-        yyerror("not viable as parameter");
-        
     } else{
         unknown_var($4);
     }
@@ -592,30 +571,33 @@ function_call : CALL IDENT
             $4[i] = '\0';
             $4++;
 
-            if (search_str_table($4) >= 0){
+            if (string_exists($4) == 1){
                 res = (char *)malloc(30+strlen($4)+45+1);
                 sprintf(res, "call i32 @__mingw_printf(ptr @%s)\ncall i32 @__mingw_printf(ptr @newline__)\n", $4);
             } else{
                 int index = search_symb_table($4);
                 if (index >= 0){
+                // expression is number variable
                     char *data_type = symbol_table[index].data_type;
-                    $$ = newTemp();
-                    fprintf(temp_out, "%s = load %s, ptr %%%s0\n", $$, data_type, $4);
                      if (strcmp(data_type, "i8") == 0){
-                        char *tmp_var = newTemp();
-                        fprintf(temp_out, "%s = sext %s %s to i32\n", tmp_var, data_type, $$);
-                        $$ = tmp_var;
+                        char *tmp_var = new_temp_var();
+                        fprintf(temp_out, "%s = sext %s %%%s.%d to i32\n", tmp_var, data_type, $4, symbol_table[index].version-1);
+
+                        res = (char *)malloc(45+strlen($4)+2+1);
+                        sprintf(res, "call i32 @__mingw_printf(ptr @num_str__, i32 %s)\n", tmp_var);
+                        free(tmp_var);
+                    } else {
+                        int digit_len_version = digit_length(symbol_table[index].version-1);
+                        res = (char *)malloc(46+strlen($4)+1+digit_len_version+2+1);
+                        sprintf(res, "call i32 @__mingw_printf(ptr @num_str__, i32 %%%s.%d)\n", $4, symbol_table[index].version-1);
                     }
-                    res = (char *)malloc(45+strlen($$)+2+1);
-                    sprintf(res, "call i32 @__mingw_printf(ptr @num_str__, i32 %s)\n", $$);
-                    temp_strCount++;
                 } else{
                     unknown_var($4);
                 }
             }
         } else if (is_temp_var($4+1)){
             if (strcmp(type, "i8") == 0){
-                char *tmp_var = newTemp();
+                char *tmp_var = new_temp_var();
                 fprintf(temp_out, "%s = sext %s %s to i32\n", tmp_var, type, $4);
                 $4 = tmp_var;
             }
@@ -916,15 +898,6 @@ void unknown_var(char *id){
 }
 
 
-int search_str_table(char *id){
-    int i;
-    for (i = count_str-1; i>= 0; i--){
-        if (strcmp(string_table[i].id, id) == 0){
-            return i;
-        }
-    }
-    return -1;
-}
 
 void insert_str(char *original_string, char *str_to_insert, int index, char *result_string){
     // https://stackoverflow.com/a/2016015
@@ -1121,12 +1094,6 @@ void print_tables(){
     }
     printf("\n\n");
 
-    printf("\n\nStrings:");
-    printf("\nNAME || LEN\n");
-    for (i = 0; i <count_str; i++){
-        printf("%s\t%d\n", string_table[i].id, string_table[i].len);
-    }
-    printf("\n\n");
 }
 
 int is_temp_var(char *variable){
@@ -1142,4 +1109,41 @@ int is_temp_var(char *variable){
     } else {
         return 0;
     }
+}
+
+int get_str_len(char *name){
+    int index = search_symb_table(name);
+    if (index >= 0){
+        char *type = symbol_table[index].data_type;
+        type++;
+        int i = 0;
+        while (isdigit(type[i]) != 0){
+            i++;
+        }
+        type[i] = '\0';
+        int len = atoi(type);
+        return len-1;
+    } else{
+        return -1;
+    }
+}
+
+int string_exists(char *name){
+    int i = count_symbol_table-1;
+    while (i >= 0){
+        if (strcmp(symbol_table[i].symbol_type, "String") == 0 && strcmp(name, symbol_table[i].id) == 0){
+            return 1;
+        }
+        i--;
+    }
+    return 0;
+}
+
+int digit_length(int number){
+    // https://stackoverflow.com/a/11151570
+    int length = 1;
+    while ( number /= 10 ){
+       length++;
+    }
+    return length;
 }

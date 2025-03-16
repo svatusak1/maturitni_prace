@@ -272,7 +272,9 @@ continue_loop5:
 ret void
 }
 
-@1 = private constant [4 x i8] c"hm\0A\00"
+@delka = private constant [6 x i8] c"abcde\00"
+@dino = private constant [10 x i8] c"stegosaur\00"
+@kamo = private constant [5 x i8] c"kamo\00"
 
 define i32 @main() {
 entry:
@@ -300,8 +302,7 @@ br i1 %done_slt6, label %continue_loop6, label %loop6
 
 loop6:
 %pokoj.0 = load i32, ptr %pokoj0
-%t18 = load i32, ptr %pokoj0
-%t19 = call i32 @__mingw_printf(ptr @num_str__, i32 %t18)
+%t18 = call i32 @__mingw_printf(ptr @num_str__, i32 %pokoj.0)
 
 
 %loop_var6__ = load i32, ptr %pokoj0
@@ -318,13 +319,28 @@ br label %loop_start6
 
 continue_loop6:
 
-%condition_if2 = icmp sgt i32 1, 2
-br i1 %condition_if2, label %if2, label %continue_if2
-if2:
-%t20 = call i32 @__mingw_printf(ptr @1)
+%t19 = call i32 @__mingw_printf(ptr @dino)
+call i32 @__mingw_printf(ptr @newline__)
 
-br label %continue_if2
-continue_if2:
+%t20 = add i32 0, 5
+%t21 = call i32 @__mingw_printf(ptr @num_str__, i32 %t20)
+
+%t22 = call i32 @__mingw_printf(ptr @delka)
+call i32 @__mingw_printf(ptr @newline__)
+
+%c0 = alloca i32
+store i32 0, ptr %c0
+%c.0 = load i32, ptr %c0
+%t23 = call i32 @__mingw_printf(ptr @num_str__, i32 %c.0)
+
+%t24 = call i32 @__mingw_printf(ptr @kamo)
+call i32 @__mingw_printf(ptr @newline__)
+
+%op0 = alloca i8
+store i8 10, ptr %op0
+%op.0 = load i8, ptr %op0
+%t25 = sext i8 %op.0 to i32
+%t26 = call i32 @__mingw_printf(ptr @num_str__, i32 %t25)
 
 ret i32 0
 }
