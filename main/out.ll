@@ -224,9 +224,6 @@ continue_loop4:
 %test_seznam.4 = load [10 x i32], ptr %test_seznam0
 %t14 = call [10 x i32] @bubble_sort([10 x i32] %test_seznam.4,i32 10)
 store [10 x i32] %t14, ptr %test_seznam0
-%test_seznam.5 = load [10 x i32], ptr %test_seznam0
-%druhej0 = alloca [10 x i32]
-store [10 x i32] %test_seznam.5, ptr %druhej0
 br label %entry_loop5
 
 entry_loop5:
@@ -250,8 +247,8 @@ br i1 %done_slt5, label %continue_loop5, label %loop5
 
 loop5:
 %t.0 = load i32, ptr %t0
-%idx_test_seznam_.6 = getelementptr [10 x i32], ptr %test_seznam0, i32 0, i32 %t.0
-%t15 = load i32, ptr %idx_test_seznam_.6
+%idx_test_seznam_.5 = getelementptr [10 x i32], ptr %test_seznam0, i32 0, i32 %t.0
+%t15 = load i32, ptr %idx_test_seznam_.5
 %t16 = call i32 @__mingw_printf(ptr @num_str__, i32 %t15)
 
 
