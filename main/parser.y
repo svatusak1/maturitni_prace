@@ -139,7 +139,7 @@ int arr_change_version;
 %token START_OF_FILE PLUS MINUS TIMES DIVIDE RCURL SEMICOL COMMA EQL NEQ LSS GTR LEQ GEQ CALL DEF RTRN LOOP TO IF LPAREN RPAREN LBRACK RBRACK LCURL ASSIGN CAPACITY LEN COMMENT MULTICOMMENT PRINT ARRTYPE VOID
 %token <id> IDENT NUMBER STR BYTE INT STRTYPE
 
-%type st program statement declarations func_dec variable_dec change_val comment flow_control range block step condition function_line function_block return
+%type st program statement declarations function_dec variable_dec change_val comment flow_control range block step condition function_line function_block return
 %type <id> access_array expression datatype value func_datatype comp function_call step
 %type <arguments> arg_val array_spec
 %type <input_node> func_inp arg_func
@@ -217,7 +217,7 @@ array_spec : LBRACK expression RBRACK { add_arr_stack($2); }
                   ;
 
 
-declarations : func_dec 
+declarations : function_dec 
 	| variable_dec
     | string_dec
     | array_dec
@@ -309,7 +309,7 @@ change_val : IDENT ASSIGN {
            }
            ;
 
-func_dec : DEF
+function_dec : DEF
          {
          add_symb_table('K', "def");
          temp_hold = temp_out; temp_out = out; fprintf(temp_out, "\ndefine ");
@@ -748,7 +748,7 @@ block : LCURL program RCURL
 
 int main(void) {
     FILE *rog_code;
-    rog_code = fopen("bubble_sort.rog","r");
+    rog_code = fopen("bubble_sort.rog", "r");
     yyin = rog_code;
     out = fopen("out.ll", "w");
     temp_out = fopen("temp_llvm.ll", "w");
