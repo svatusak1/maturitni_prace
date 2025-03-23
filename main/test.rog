@@ -1,5 +1,6 @@
 start-ROG
 str zvire = "dinosaurus"
+call
 
 int x = 10
 call print(-9)

@@ -63,7 +63,7 @@ struct functionDataType {
     int line_number;
     struct arg_node *head;
 
-} function_table[50];
+} function_table[64];
 int count_function_table = 0;
 
 struct arg_node {
