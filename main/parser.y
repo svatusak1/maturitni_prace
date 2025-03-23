@@ -23,6 +23,7 @@ FILE *temp_hold;
 FILE *out;
 
 
+char current_var_type = 'E';
 
 int tempCounter = 0;
 char *new_temp_var() {
@@ -126,6 +127,7 @@ char *make_array_indexes(struct ArrStack* head);
 char *make_array_type(struct ArrStack *head, char *initial_type);
 
 int arr_change_version;
+int array_exists(char *name);
 
 
 %}
@@ -168,15 +170,15 @@ st : START_OF_FILE
    ;
 
 program : program statement
-	| statement 
-	;
+        | statement 
+        ;
 
 statement : declarations
-	| expression { free($1); }
-	| flow_control 
+        | expression { free($1); }
+        | flow_control 
     | change
-	| comment 
-	;
+        | comment 
+        ;
 
 change : change_array
        | change_val
@@ -218,10 +220,10 @@ array_spec : LBRACK expression RBRACK { add_arr_stack($2); }
 
 
 declarations : function_dec 
-	| variable_dec
-    | string_dec
-    | array_dec
-	;
+             | variable_dec
+             | string_dec
+             | array_dec
+             ;
 
 
 array_dec : ARRTYPE datatype IDENT array_spec
@@ -299,8 +301,8 @@ string_dec : STRTYPE IDENT ASSIGN STR
            }
 
 comment : COMMENT
-	| MULTICOMMENT 
-	;
+        | MULTICOMMENT 
+        ;
 
 change_val : IDENT ASSIGN {
            insert_type(symbol_table[search_symb_table($1)].data_type);
@@ -354,13 +356,13 @@ function_dec : DEF
          ;
 
 func_inp : arg_func {$$ = $1; function_table[count_function_table].head = $1; }
-	| func_inp { fprintf(temp_out, ", "); } COMMA arg_func
+        | func_inp { fprintf(temp_out, ", "); } COMMA arg_func
     {
     $1->next = $4;
     $$ = $4;
     }
-	| { }
-	;
+        | { }
+        ;
 
 arg_func : datatype IDENT
          {
@@ -398,12 +400,12 @@ func_datatype : datatype
               ;
 
 function_block : function_line 
-	| function_block function_line
-	;
+        | function_block function_line
+        ;
 
 function_line : statement 
-	| return
-	;
+        | return
+        ;
 
 return : RTRN expression
        {
@@ -417,36 +419,41 @@ expression : expression PLUS expression
            {
            $$ = new_temp_var(); fprintf(temp_out, "%s = add %s %s, %s\n", $$, type, $1, $3);
            free($1); free($3);
+           current_var_type = 'T';
            }
-	       
-		   | expression MINUS expression
-	       {
-	       $$ = new_temp_var(); fprintf(temp_out, "%s = sub %s %s, %s\n", $$, type, $1, $3);
+               
+                   | expression MINUS expression
+               {
+               $$ = new_temp_var(); fprintf(temp_out, "%s = sub %s %s, %s\n", $$, type, $1, $3);
            free($1); free($3);
-	       }
-	       
-		   | expression TIMES expression
-	       {
-	       $$ = new_temp_var(); fprintf(temp_out, "%s = mul %s %s, %s\n", $$, type, $1, $3);
+           current_var_type = 'T';
+               }
+               
+                   | expression TIMES expression
+               {
+               $$ = new_temp_var(); fprintf(temp_out, "%s = mul %s %s, %s\n", $$, type, $1, $3);
            free($1); free($3);
-	       }
-	       
-		   | expression DIVIDE expression
-	       {
-	       $$ = new_temp_var(); fprintf(temp_out, "%s = udiv %s %s, %s\n", $$, type, $1, $3);
+           current_var_type = 'T';
+               }
+               
+                   | expression DIVIDE expression
+               {
+               $$ = new_temp_var(); fprintf(temp_out, "%s = udiv %s %s, %s\n", $$, type, $1, $3);
            free($1); free($3);
+           current_var_type = 'T';
            }
-	       
-		   | LPAREN expression RPAREN { $$ = $2; }
+               
+                   | LPAREN expression RPAREN { $$ = $2; }
            
-		   | value
+                   | value
            | function_call
            {
            $$ = new_temp_var(); fprintf(temp_out, "%s = %s\n", $$, $1);
            free($1);
+           current_var_type = 'T';
            }
-           | access_array
-	       ;
+           | access_array { $$ = $1; current_var_type = 'T'; }
+               ;
 
 value : IDENT
       {
@@ -454,13 +461,21 @@ value : IDENT
       if (index >= 0){
           insert_type(symbol_table[index].data_type);
           int version = symbol_table[index].version;
-          int digit_len_of_version = digit_length(version);
-          $$ = (char*)malloc(1+strlen($1)+ 1 + digit_len_of_version + 1);
-          sprintf($$, "%%%s.%d", $1, version);
-          if (string_exists($1) == 0){
-              fprintf(temp_out, "%s = load %s, ptr %%%s0\n", $$, symbol_table[index].data_type, $1);
+          $$ = (char*)malloc(1+strlen($1)+ 1 + digit_length(version) + 1);
+          sprintf(type, "%s", symbol_table[index].data_type);
+          if (string_exists($1) != 0){
+              sprintf($$, "%s", $1);
+              current_var_type = 'S';
+          } else {
+              sprintf($$, "%%%s.%d", $1, version);
+              fprintf(temp_out, "%s = load %s, ptr %%%s0\n", $$, type, $1);
               symbol_table[index].version++;
-              sprintf(type, "%s", symbol_table[index].data_type);
+              if (array_exists($1) != 0){
+                  current_var_type = 'A';
+              } else{
+                  current_var_type = 'V';
+              }
+
           }
       } else{
         unknown_var($1);
@@ -470,6 +485,7 @@ value : IDENT
       if (strcmp(type, "i32") != 0 && strcmp(type, "i8") != 0){
         insert_type("i32");
       }
+      current_var_type = 'N';
       }
       ;
 
@@ -516,7 +532,7 @@ function_call : CALL IDENT
                 }
             }
 
-	| CALL LEN LPAREN IDENT RPAREN
+        | CALL LEN LPAREN IDENT RPAREN
     {
     add_symb_table('K', "len-func");
     int index = search_symb_table($4);
@@ -560,42 +576,30 @@ function_call : CALL IDENT
     | CALL PRINT LPAREN expression RPAREN 
     {
     char *res;
-    if ($4[0] == '%'){
-    // if expression is variable
-        int i = 0;
-        while ($4[i] != '.' && i < strlen($4)){
-            i++;
-        }
-        if (i < strlen($4)){
-            // if expression is just plain variable
-            $4[i] = '\0';
+    int index;
+    switch (current_var_type){
+    // E-empty
+    // A-array
+    // T-temp_var
+    // N-number V-variable(i8/i32)
+        case 'A':
             $4++;
-
-            if (string_exists($4) == 1){
-                res = (char *)malloc(30+strlen($4)+45+1);
-                sprintf(res, "call i32 @__mingw_printf(ptr @%s)\ncall i32 @__mingw_printf(ptr @newline__)\n", $4);
+            remove_after_dot($4);
+            index = search_symb_table($4);
+            char *arr_datatype = symbol_table[index].data_type;
+            int array_len = 7+(int)strlen($4)+13+(int)strlen(arr_datatype)+2;
+            res = (char *)malloc(1+digit_length(temp_strCount)+21+digit_length(array_len)+18+(int)strlen($4)+15+(int)strlen(arr_datatype)+7+1);
+            sprintf(res, "@%d = private constant [%d x i8] c\"array \\22%s\\22 with type: %s\\0A\\00\"\n", temp_strCount, array_len, $4, arr_datatype);
+            if (in_function){
+                strcat(string_hold, res);
             } else{
-                int index = search_symb_table($4);
-                if (index >= 0){
-                // expression is number variable
-                    char *data_type = symbol_table[index].data_type;
-                     if (strcmp(data_type, "i8") == 0){
-                        char *tmp_var = new_temp_var();
-                        fprintf(temp_out, "%s = sext %s %%%s.%d to i32\n", tmp_var, data_type, $4, symbol_table[index].version-1);
-
-                        res = (char *)malloc(45+strlen($4)+2+1);
-                        sprintf(res, "call i32 @__mingw_printf(ptr @num_str__, i32 %s)\n", tmp_var);
-                        free(tmp_var);
-                    } else {
-                        int digit_len_version = digit_length(symbol_table[index].version-1);
-                        res = (char *)malloc(46+strlen($4)+1+digit_len_version+2+1);
-                        sprintf(res, "call i32 @__mingw_printf(ptr @num_str__, i32 %%%s.%d)\n", $4, symbol_table[index].version-1);
-                    }
-                } else{
-                    unknown_var($4);
-                }
+                fprintf(out, "%s", res);
             }
-        } else if (is_temp_var($4+1)){
+            res = (char *)malloc(30+10+2+1);
+            sprintf(res, "call i32 @__mingw_printf(ptr @%d)\n", temp_strCount);
+            temp_strCount++;
+            break;
+        case 'T':
             if (strcmp(type, "i8") == 0){
                 char *tmp_var = new_temp_var();
                 fprintf(temp_out, "%s = sext %s %s to i32\n", tmp_var, type, $4);
@@ -603,27 +607,51 @@ function_call : CALL IDENT
             }
             res = (char *)malloc(45+strlen($4)+2+1);
             sprintf(res, "call i32 @__mingw_printf(ptr @num_str__, i32 %s)\n", $4);
-        } else{
-            unknown_var($4);
-        }
-    } else if (isdigit($4[0]) != 0){
-    // expression is number
-        res = (char *)malloc(1+20+21+20+2+9+strlen($4)+2);
-        sprintf(res, "@%d = private constant [%d x i8] c\"%s\\0A\\00\"\n", temp_strCount, (int)strlen($4)+2, $4);
-        if (in_function){
-            strcat(string_hold, res);
-        } else{
-            fprintf(out, "%s", res);
-        }
-        res = (char *)malloc(30+10+2+1);
-        sprintf(res, "call i32 @__mingw_printf(ptr @%d)\n", temp_strCount);
-        temp_strCount++;
-    } else{
-        unknown_var($4);
+            break;
+        case 'N':
+            res = (char *)malloc(1+20+21+20+2+9+strlen($4)+2);
+            sprintf(res, "@%d = private constant [%d x i8] c\"%s\\0A\\00\"\n", temp_strCount, (int)strlen($4)+2, $4);
+            if (in_function){
+                strcat(string_hold, res);
+            } else{
+                fprintf(out, "%s", res);
+            }
+            res = (char *)malloc(30+10+2+1);
+            sprintf(res, "call i32 @__mingw_printf(ptr @%d)\n", temp_strCount);
+            temp_strCount++;
+            break;
+        case 'V':
+            $4++;
+            remove_after_dot($4);
+            index = search_symb_table($4);
+            char *data_type = symbol_table[index].data_type;
+            if (strcmp(data_type, "i8") == 0){
+                char *tmp_var = new_temp_var();
+                fprintf(temp_out, "%s = sext %s %%%s.%d to i32\n", tmp_var, data_type, $4, symbol_table[index].version-1);
+
+                res = (char *)malloc(45+strlen($4)+2+1);
+                sprintf(res, "call i32 @__mingw_printf(ptr @num_str__, i32 %s)\n", tmp_var);
+                free(tmp_var);
+            } else {
+                int digit_len_version = digit_length(symbol_table[index].version-1);
+                res = (char *)malloc(46+strlen($4)+1+digit_len_version+2+1);
+                sprintf(res, "call i32 @__mingw_printf(ptr @num_str__, i32 %%%s.%d)\n", $4, symbol_table[index].version-1);
+            }
+            break;
+        case 'S':
+            res = (char *)malloc(30+strlen($4)+43+1);
+            sprintf(res, "call i32 @__mingw_printf(ptr @%s)\ncall i32 @__mingw_printf(ptr @newline__)\n", $4);
+            break;
+        default:
+            yyerror("variable type unsupported for print");
+            break;
     }
     $$ = res;
+
+
+
     }
-	;
+        ;
 
 arg_val : expression
         {
@@ -741,14 +769,14 @@ comp : EQL { $$ = "eq"; }
      ;
 
 block : LCURL program RCURL 
-	;
+        ;
 
 %%
 
 
 int main(void) {
     FILE *rog_code;
-    rog_code = fopen("bubble_sort.rog", "r");
+    rog_code = fopen("test.rog", "r");
     yyin = rog_code;
     out = fopen("out.ll", "w");
     temp_out = fopen("temp_llvm.ll", "w");
@@ -771,6 +799,7 @@ int main(void) {
     
     fclose(out);
     fclose(temp_out);
+    remove("temp_llvm.ll");
 
     print_tables();
 
@@ -811,15 +840,13 @@ void add_symb_table(char c, char *id){
         symbol_table[count_symbol_table].version = 0;
         symbol_table[count_symbol_table].data_type = strdup(type);
         switch (c){
-        /*
-        K keyword
-        C consctant
-        V variable
-        F function dec
-        I function input variable
-        A array
-        S strings
-        */
+        // K-keyword
+        // C-consctant
+        // V-variable
+        // F-function dec
+        // I-function input variable
+        // A-array
+        // S-strings
             case 'K':
                 symbol_table[count_symbol_table].data_type = "N/A";
                 symbol_table[count_symbol_table].symbol_type = "Keyword";
@@ -1126,6 +1153,17 @@ int get_str_len(char *name){
     } else{
         return -1;
     }
+}
+
+int array_exists(char *name){
+    int i = count_symbol_table-1;
+    while (i >= 0){
+        if (strcmp(symbol_table[i].symbol_type, "Array") == 0 && strcmp(name, symbol_table[i].id) == 0){
+            return 1;
+        }
+        i--;
+    }
+    return 0;
 }
 
 int string_exists(char *name){

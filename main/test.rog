@@ -1,10 +1,19 @@
 start-ROG
 str zvire = "dinosaurus"
 
-arr int mysi[100]
-loop(int p; 100->1){
-    mysi[100-p] = p
+int x = 10
+call print(-9)
+call print(x)
+call print("pterodaktyl")
+call print(x+10+10)
+arr int pole[10]
+
+loop(int a; 0->9){
+    pole[a] = a
 }
-loop(int h; 0->99){
-    call print(mysi[h])
+call print(pole)
+loop (int k; 0->9){
+    call print(pole[k])
 }
+
+

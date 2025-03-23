@@ -65,10 +65,10 @@ letter             [A-Za-z]
 
 whitespace
 
-{letter}({letter}|"_"|{digit})* { yylval.id = strdup(yytext); return IDENT; }
-
-
 "-"?{digit}+ { yylval.id = strdup(yytext); return NUMBER; }
+
+{letter}({letter}|"_"|"-"|{digit})* { yylval.id = strdup(yytext); return IDENT; }
+
 
     /* read in strings */ 
 \"[^"]*\" { yylval.id = strdup(yytext); return STR; }

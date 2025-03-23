@@ -1,10 +1,14 @@
 @echo off
 set /p myVar="file=Enter file: "
 
-set ReplaceLine=751
-set /A ReplaceLine-=1
 set input_file=parser.y
 set TempFile=temp_parser__.txt
+setlocal enabledelayedexpansion
+set "ReplaceLine="
+for /f "tokens=1 delims=:" %%A in ('findstr /n /c:"rog_code = fopen" "%input_file%"') do (
+    set "ReplaceLine=%%A"
+)
+set /A ReplaceLine-=1
 
 if exist "%TempFile%" del "%TempFile%"
 
@@ -17,7 +21,6 @@ if "%myVar"=="" (
 
 set /a line_count=1
 
-setlocal enabledelayedexpansion
 
 < "%input_file%" (
     for /l %%N in (1,1,%ReplaceLine%) do (
@@ -25,7 +28,6 @@ setlocal enabledelayedexpansion
         echo.!line!>> "%TempFile%"
     )
 )
-endlocal
 
 set /A ReplaceLine+=1
 
@@ -33,6 +35,7 @@ echo     rog_code = fopen("%myVar%", "r");>> "%TempFile%"
 more +%ReplaceLine% < "%input_file%">> "%TempFile%"
 copy /y "%TempFile%" "%input_file%"
 del "%TempFile%"
+endlocal
 
 call compile.bat
 
