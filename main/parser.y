@@ -776,7 +776,7 @@ block : LCURL program RCURL
 
 int main(void) {
     FILE *rog_code;
-    rog_code = fopen("test.rog", "r");
+    rog_code = fopen("bubble_sort.rog", "r");
     yyin = rog_code;
     out = fopen("out.ll", "w");
     temp_out = fopen("temp_llvm.ll", "w");
