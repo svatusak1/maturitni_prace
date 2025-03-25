@@ -5,19 +5,19 @@ Author: Jakub Svatuška
 Supervisor: Pavel Kryl
 
 ==============================================================================
-Introduction
+## Introduction
 
 Rogalo is a compiled procedural mostly structural language built for 
 educational purposes.
 
 ==============================================================================
-SYNTAX
+## SYNTAX
 
 One-line comments are marked with ## at the beginning of the line:
 
-## this is a comment
+##this is a comment
 
-Multi-line comments are marked as follows ##[[ .... ]]##:
+Multi-line comments are marked as follows ##[[.....]]##:
 
 ##[[
 
@@ -29,7 +29,7 @@ commment
 ##]]
 
 ------------------------------------------------------------------------------
-VARIBLES
+## VARIBLES
 
 type name = value
 
@@ -52,7 +52,7 @@ following types are available:
 global variables can't be acceced in functions (strings can be acceced anywhere)
 
 ------------------------------------------------------------------------------
-OPERATORS
+## OPERATORS
 
 following arithmetic operators are available:
     
@@ -74,7 +74,7 @@ comparing operators available:
 
     applicable only between variables of the same type
 ------------------------------------------------------------------------------
-FLOW CONTROL
+## FLOW CONTROL
 
 blocks are denoted with curly braces
 
@@ -91,9 +91,9 @@ loop (variable_to_loop_on; range_min -> range_max(inclusive); optional_step)
     ## here happenes something
 }
 
-## default step is +1
+default step is +1
 
-## loops 6 times with i = 0, then 1, then 2, 3, 4, 5
+loops 6 times with i = 0, then 1, then 2, 3, 4, 5
 loop (byte i; 0 -> 5) 
 {
     counter = counter + i * 10
@@ -113,7 +113,7 @@ loop (int i; 10 -> 0; -1)
 strings return a syntax error in boolean statements evaluation
 
 ------------------------------------------------------------------------------
-FUNCTIONS
+## FUNCTIONS
 
 function calls are done with brackets with arguments:
 
