@@ -11,6 +11,14 @@ Rogalo is a compiled procedural mostly structural language built for
 educational purposes.
 
 ==============================================================================
+## Compile and run
+
+To compile your code run script *compile.bat*
+To run your code execute script *run.bat*
+your file name needs to be inside the main function in *parser.y* as input-file
+
+
+==============================================================================
 ## SYNTAX
 
 One-line comments are marked with ## at the beginning of the line:
