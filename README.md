@@ -3,6 +3,7 @@ and compiled with LVMM
 
 Author: Jakub Svatuška
 Supervisor: Pavel Kryl
+Github Repository: https://github.com/svatusak1/maturitni_prace
 
 ==============================================================================
 ## Introduction
